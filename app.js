@@ -223,9 +223,11 @@ function pintarPiezas(r) {
     </div>`).join('');
 }
 
+// el lado completo a escala real, pico arriba; el botón corre por la recta del lado derecho
 function curvaGeo(l) {
-  const fs = l.Lc / 16, ex = 3, mx = fs * .6, mt = fs * 2, fondo = l.prof(U0) * 1.9;
-  return { fs, fondo, vbW: l.Lc + 2 * mx, vbH: mt + fondo * ex + fs * .4, X: d => d + mx, Y: f => mt + f * ex, dDeX: x => x - mx };
+  const fs = l.Ht / 13, mx = fs * .5, mt = fs * 1.6, mb = fs * .4;
+  return { fs, vbW: 2 * l.W + 2 * mx, vbH: l.Ht + mt + mb, X: x => x + l.W + mx, Y: y => l.Ht + mt - y,
+    dDe: (cx, cy) => { const x = Math.abs(cx - l.W - mx), y = l.Ht + mt - cy; return (x * l.W - (y - l.Ht) * l.S) / l.Lc; } };
 }
 
 function pintarCurva(r) {
@@ -236,24 +238,24 @@ function pintarCurva(r) {
   $('#ladoSel').hidden = r.lados.length < 2;
   $('#ladoSel').innerHTML = r.lados.map((x, i) => `<button data-i="${i}" aria-pressed="${i === st.lado}">Lado de ${n0(x.base)}</button>`).join('');
 
-  // la recta acostada: punta a la izquierda, esquina de la gola a la derecha, la curva por debajo (hondo x3 para que se vea)
   const g = curvaGeo(l), { X, Y, fs } = g;
-  let s = `<svg viewBox="0 0 ${g.vbW.toFixed(1)} ${g.vbH.toFixed(1)}" id="curvaDibujo" role="img" aria-label="La recta de la punta a la gola con la curva debajo">`;
-  const curva = [];
-  for (let i = 0; i <= 120; i++) { const d = l.Lc * i / 120; curva.push([d, enRecta(l, d).f]); }
-  s += `<polygon class="lona" points="${pts([...curva, [l.Lc, g.fondo], [0, g.fondo]], X, Y)}"/>`;
-  s += `<line class="recta" x1="${X(0)}" y1="${Y(0)}" x2="${X(l.Lc)}" y2="${Y(0)}"/>`;
+  let s = `<svg viewBox="0 0 ${g.vbW.toFixed(1)} ${g.vbH.toFixed(1)}" id="curvaDibujo" role="img" aria-label="Un lado con la recta de la punta a la gola">`;
+  s += `<polygon class="lona" points="${pts(forma(l, 0, l.Ht), X, Y)}"/>`;
+  s += `<rect class="gola" x="${X(-l.W)}" y="${Y(l.G)}" width="${2 * l.W}" height="${l.G}"/>`;
+  s += `<text x="${X(0)}" y="${Y(l.G / 2) + fs * .3}" font-size="${fs * .8}" text-anchor="middle" class="gris">gola</text>`;
+  s += `<line class="recta" x1="${X(0)}" y1="${Y(l.Ht)}" x2="${X(l.W)}" y2="${Y(l.G)}"/>`;
+  s += `<line class="recta" x1="${X(0)}" y1="${Y(l.Ht)}" x2="${X(-l.W)}" y2="${Y(l.G)}" style="opacity:.35"/>`;
   st.puntos.filter(d => d <= l.Lc).forEach(d => {
-    const f = enRecta(l, d).f;
-    s += `<line class="marca" x1="${X(d)}" y1="${Y(0)}" x2="${X(d)}" y2="${Y(f)}"/><circle class="punto" cx="${X(d)}" cy="${Y(f)}" r="${fs * .22}"/>`;
+    const k = enRecta(l, d);
+    s += `<line class="marca" x1="${X(k.Q[0])}" y1="${Y(k.Q[1])}" x2="${X(k.P[0])}" y2="${Y(k.P[1])}"/><circle class="punto" cx="${X(k.P[0])}" cy="${Y(k.P[1])}" r="${fs * .16}"/>`;
+    s += `<circle class="punto" cx="${X(-k.P[0])}" cy="${Y(k.P[1])}" r="${fs * .13}" style="opacity:.35"/>`;
   });
   const k = enRecta(l, st.d);
-  s += `<line class="hunde" x1="${X(st.d)}" y1="${Y(0)}" x2="${X(st.d)}" y2="${Y(k.f)}"/>`;
-  s += `<circle class="boton" cx="${X(st.d)}" cy="${Y(0)}" r="${fs * .45}"/>`;
-  s += `<text x="${X(st.d) + (st.d > l.Lc * .7 ? -fs * .7 : fs * .7)}" y="${Y(k.f / 2) + fs * .35}" font-size="${fs}" class="rojo" text-anchor="${st.d > l.Lc * .7 ? 'end' : 'start'}">${n1(k.f)}</text>`;
-  s += `<text x="${X(0)}" y="${Y(0) - fs * .7}" font-size="${fs}">punta</text>`;
-  s += `<text x="${X(l.Lc)}" y="${Y(0) - fs * .7}" font-size="${fs}" text-anchor="end">esquina de la gola</text>`;
-  s += `<text x="${X(l.Lc / 2)}" y="${Y(g.fondo) - fs * .5}" font-size="${fs * .55}" text-anchor="middle" class="gris">dibujo 3 veces más hondo para que se note</text>`;
+  s += `<line class="hunde" x1="${X(k.Q[0])}" y1="${Y(k.Q[1])}" x2="${X(k.P[0])}" y2="${Y(k.P[1])}"/>`;
+  s += `<circle class="boton" cx="${X(k.Q[0])}" cy="${Y(k.Q[1])}" r="${fs * .32}"/>`;
+  s += `<text x="${X(k.P[0]) - fs * .35}" y="${Y(k.P[1]) + fs * .9}" font-size="${fs * .9}" class="rojo" text-anchor="end">${n1(k.f)}</text>`;
+  s += `<text x="${X(0)}" y="${Y(l.Ht) - fs * .5}" font-size="${fs * .9}" text-anchor="middle">punta</text>`;
+  s += `<text x="${X(l.W) - fs * .3}" y="${Y(l.G) + fs * .85}" font-size="${fs * .65}" text-anchor="end" class="gris">esquina de la gola ↗</text>`;
   $('#curvaSvg').innerHTML = s + '</svg>';
 
   $('#lecD').textContent = `${n1(st.d)} cm`;
@@ -367,7 +369,7 @@ function arrastrar(ev) {
   const l = st.r.lados[st.lado];
   const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
   const c = pt.matrixTransform(svg.getScreenCTM().inverse());
-  moverA(Math.min(l.Lc, Math.max(0, curvaGeo(l).dDeX(c.x))));
+  moverA(Math.min(l.Lc, Math.max(0, curvaGeo(l).dDe(c.x, c.y))));
 }
 $('#curvaSvg').addEventListener('pointerdown', e => { arrastrando = true; e.currentTarget.setPointerCapture(e.pointerId); arrastrar(e); });
 $('#curvaSvg').addEventListener('pointermove', e => { if (arrastrando) arrastrar(e); });

@@ -1,5 +1,5 @@
 // Primero la red (para que siempre llegue la versión nueva); si no hay señal, lo guardado.
-const CACHE = 'moldes-v1';
+const CACHE = 'moldes-v2';
 const BASE = ['./', 'index.html', 'app.css', 'app.js', 'manifest.webmanifest', 'icons/logo-claro.png', 'icons/icon-192.png'];
 
 self.addEventListener('install', e => {
