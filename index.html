@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Moldes Cubricol</title>
+<meta name="theme-color" content="#14181b">
+<meta name="description" content="Medidas de corte de lona para carpas Cubricol">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Moldes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Narrow:wght@600;700&display=swap">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- Clave -->
+<section id="pin" class="pin" hidden>
+  <img src="icons/logo-claro.png" alt="Carpas Cubricol" class="pin-logo">
+  <p class="pin-titulo">Escribe la clave</p>
+  <div class="pin-puntos" id="pinPuntos"><i></i><i></i><i></i><i></i></div>
+  <p class="pin-error" id="pinError" aria-live="polite"></p>
+  <div class="teclado" id="teclado">
+    <button>1</button><button>2</button><button>3</button>
+    <button>4</button><button>5</button><button>6</button>
+    <button>7</button><button>8</button><button>9</button>
+    <span></span><button>0</button><button data-k="borrar" aria-label="Borrar">⌫</button>
+  </div>
+</section>
+
+<div id="app" hidden>
+  <header class="barra">
+    <img src="icons/logo-claro.png" alt="Carpas Cubricol" class="barra-logo">
+    <button class="pill" id="pillCarpa" aria-label="Cambiar carpa"></button>
+    <button class="engranaje" id="btnAjustes" aria-label="Ajustes del taller">
+      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.5 7.5 0 0 0-1.7-1L14.9 3h-4l-.4 2.9a7.5 7.5 0 0 0-1.7 1l-2.5-1-2 3.5L6.4 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.5 7.5 0 0 0 1.7 1l.4 2.9h4l.4-2.9a7.5 7.5 0 0 0 1.7-1l2.5 1 2-3.5zM12.9 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+    </button>
+  </header>
+
+  <main class="contenido">
+    <!-- 1. Elegir carpa -->
+    <section class="vista" id="v-carpa">
+      <h1>¿Qué carpa vas a cortar?</h1>
+      <div class="tipos">
+        <button class="tipo activo" id="tipoPleg">
+          <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M8 52V34Q30 30 50 6Q70 30 92 34V52Z"/></svg>
+          <b>Plegable</b><span>con curva</span>
+        </button>
+        <button class="tipo" id="tipoFija" disabled>
+          <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M8 52V34L50 8L92 34V52Z"/></svg>
+          <b>Fija</b><span>pronto</span>
+        </button>
+      </div>
+      <h2>Tamaño</h2>
+      <div class="tamanos" id="tamanos">
+        <button data-s="2x2"><b>2×2</b><span>metros</span></button>
+        <button data-s="3x3"><b>3×3</b><span>metros</span></button>
+        <button data-s="4x4"><b>4×4</b><span>metros</span></button>
+        <button data-s="otra"><b>Otra</b><span>medida</span></button>
+      </div>
+      <div class="otra" id="otra" hidden>
+        <div class="paso-num"><span class="etq">Largo (m)</span>
+          <div class="stepper"><button data-campo="largo" data-paso="-0.5" aria-label="Menos largo">−</button><input id="largo" type="number" inputmode="decimal" step="0.5" min="1" max="6"><button data-campo="largo" data-paso="0.5" aria-label="Más largo">+</button></div></div>
+        <div class="paso-num"><span class="etq">Ancho (m)</span>
+          <div class="stepper"><button data-campo="ancho" data-paso="-0.5" aria-label="Menos ancho">−</button><input id="ancho" type="number" inputmode="decimal" step="0.5" min="1" max="6"><button data-campo="ancho" data-paso="0.5" aria-label="Más ancho">+</button></div></div>
+      </div>
+      <p class="aviso" id="avisoCarpa"></p>
+      <button class="cta" id="verMoldes">Ver moldes</button>
+    </section>
+
+    <!-- 2. Piezas -->
+    <section class="vista" id="v-piezas" hidden>
+      <h1 id="piezasTitulo"></h1>
+      <div id="piezasLista"></div>
+    </section>
+
+    <!-- 3. Curva -->
+    <section class="vista" id="v-curva" hidden>
+      <h1>Marcar la curva</h1>
+      <p class="guia">Con el lado ya sellado en recto, traza una línea recta de la <b>punta</b> a la <b>esquina de la gola</b>. Mueve el botón por la recta y mide en escuadra lo que se hunde.</p>
+      <div class="seg" id="ladoSel" hidden></div>
+      <div class="curva-dibujo" id="curvaSvg"></div>
+      <div class="lectura">
+        <div class="dato azul"><span class="etq">Desde la punta</span><b id="lecD"></b></div>
+        <div class="dato rojo"><span class="etq">Se hunde</span><b id="lecF"></b></div>
+      </div>
+      <div class="control">
+        <button class="fino" data-mover="-1" aria-label="Un centímetro hacia la punta">−1</button>
+        <input id="slider" type="range" min="0" step="0.5" aria-label="Distancia desde la punta">
+        <button class="fino" data-mover="1" aria-label="Un centímetro hacia la gola">+1</button>
+      </div>
+      <div class="acciones">
+        <button class="cta" id="marcar">Marcar este punto</button>
+      </div>
+      <h2>Puntos marcados</h2>
+      <div class="puntos" id="puntos"></div>
+      <div class="acciones dos">
+        <button class="sec" id="cada20">Llenar cada 20 cm</button>
+        <button class="sec" id="limpiar">Borrar todos</button>
+      </div>
+      <p class="nota" id="curvaNota"></p>
+    </section>
+
+    <!-- 4. Patas -->
+    <section class="vista" id="v-patas" hidden>
+      <h1>Patas</h1>
+      <div class="pieza">
+        <div class="pieza-top"><h2>Pata</h2><span class="cortar">Cortar 4</span></div>
+        <div class="pata-grid">
+          <div class="pata-dibujo" id="pataSvg"></div>
+          <dl class="medidas" id="pataMedidas"></dl>
+        </div>
+        <p class="nota">El lado ancho se sella en la esquina, a lo alto de la gola: mitad en un lado y mitad en el otro. Los otros 3 lados llevan borde con varilla de 3 cm.</p>
+      </div>
+    </section>
+
+    <!-- 5. Lona -->
+    <section class="vista" id="v-lona" hidden>
+      <h1>Lona</h1>
+      <div class="total"><span class="etq">Necesitas más o menos</span><b id="lonaTotal"></b><span id="lonaRollo"></span></div>
+      <dl class="medidas" id="lonaLista"></dl>
+      <h2>Así se acomoda en el rollo</h2>
+      <div class="rollo" id="rolloSvg"></div>
+      <p class="nota">Las puntas van una al derecho y otra al revés para gastar menos. En el taller se puede acomodar mejor.</p>
+      <button class="cta verde" id="compartir">Enviar medidas por WhatsApp</button>
+      <p class="nota" id="compartido" aria-live="polite"></p>
+    </section>
+
+    <!-- Ajustes -->
+    <section class="vista" id="v-ajustes" hidden>
+      <h1>Ajustes del taller</h1>
+      <p class="guia">Solo cambia esto si cambió la forma de trabajar. Afecta todas las carpas.</p>
+      <div class="ajustes" id="ajustes"></div>
+      <div class="acciones dos">
+        <button class="sec" id="restaurar">Volver a los valores del taller</button>
+        <button class="cta" id="cerrarAjustes">Listo</button>
+      </div>
+      <p class="nota">Calibrado con el molde de la 3×3 plegable que quedó bien: 303 de ancho, 40 de gola, 220 hasta el pico y una curva que se hunde 13,5 cm a 85,5 cm de la punta.</p>
+    </section>
+  </main>
+
+  <nav class="tabs" id="tabs">
+    <button data-v="carpa"><svg viewBox="0 0 24 24"><path d="M3 20V13Q8 12 12 4Q16 12 21 13V20Z"/></svg>Carpa</button>
+    <button data-v="piezas"><svg viewBox="0 0 24 24"><path d="M4 20V5h7v15zM13 20V11l7-6v15z"/></svg>Piezas</button>
+    <button data-v="curva"><svg viewBox="0 0 24 24"><path d="M4 20Q6 9 20 4M4 20L20 4" /></svg>Curva</button>
+    <button data-v="patas"><svg viewBox="0 0 24 24"><path d="M7 3h10l-3 18h-4z"/></svg>Patas</button>
+    <button data-v="lona"><svg viewBox="0 0 24 24"><path d="M3 6h14a3 3 0 0 1 0 6H3zM3 12v6h16"/></svg>Lona</button>
+  </nav>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
