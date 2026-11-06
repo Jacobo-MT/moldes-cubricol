@@ -8,7 +8,9 @@
 const CO = { c: { L: 500, W: 250, H: 250, paso: 0, ...leerLS('cochera4', {}) }, g: null, f: 0, juega: true, timer: 0, raf: 0, abre: 0 };
 const coGuardar = () => guardarLS('cochera4', { L: CO.c.L, W: CO.c.W, H: CO.c.H, paso: CO.c.paso });
 const CO_LIM = { L: [300, 900], W: [150, 400], H: [150, 350] };
-const CO_SOLAPE = 5, CO_CINTA = 40, CO_FIJO = 100;
+const CO_SOLAPE = 5, CO_FIJO = 100;
+// funda del arco: tira de 16 cm (3 + 10 que abrazan un tubo de 1" + 3); en las puntas el borde del gajo da la vuelta al tubo
+const CO_FUNDA = 16, CO_SELLO_F = 3, CO_FUNDA_PISO = 13;
 function cocheraNombre() { const c = CO.c; return `Cochera ${n1(c.L / 100)}×${n1(c.W / 100)}×${n1(c.H / 100)}`; }
 
 const d2 = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
@@ -86,7 +88,9 @@ function coGajo(R, a, dTh) {
   const rot = p => { const x = p[0] - t0[0], y = p[1] - t0[1]; return [x * cs - y * sn, x * sn + y * cs]; };
   const ra = FA.map(rot), rb = FB.map(rot);
   const yc = (Math.max(...rb.map(p => p[1])) + Math.min(...ra.map(p => p[1]))) / 2;
-  return { arriba: rb.map(p => [p[0], p[1] - yc]), abajo: ra.map(p => [p[0], p[1] - yc]), Lc: d2(t0, t1) };
+  const ar = rb.map(p => [p[0], p[1] - yc]), ab = ra.map(p => [p[0], p[1] - yc]);
+  const up = ar.map((p, i) => [(p[0] + ab[i][0]) / 2, (p[1] - ab[i][1]) / 2]);
+  return { arriba: up, abajo: up.map(p => [p[0], -p[1]]), Lc: d2(t0, t1) };
 }
 function coPieza(m, mArriba, mAbajo) {
   const up = coCorrer(m.arriba, mArriba, 1), dn = coCorrer(m.abajo, mAbajo, -1), Lc = m.Lc;
@@ -105,7 +109,7 @@ function coCalcular() {
   const g = { error: '', a, R, hc, Lm, yF: -Lm / 2, yA: Lm / 2 };
   if (R < 100) { g.error = 'Con esas medidas la cochera queda muy pequeña.'; return g; }
   g.arco = coArco(R, 0, a);
-  const mPiso = hc > 0 ? aj.selle / 2 : aj.varilla;
+  const mPiso = hc > 0 ? aj.selle / 2 : CO_FUNDA_PISO;
   let mejor = null;
   for (let N = 2; N <= 12; N++) {
     const m = coGajo(R, a, Math.PI / 2 / N), normal = coPieza(m, aj.selle / 2, aj.selle / 2), piso = coPieza(m, aj.selle / 2, mPiso);
@@ -139,7 +143,6 @@ function coCalcular() {
   Object.assign(g, coAcomodo(g.items));
   g.areaPiezas = g.items.reduce((t, it) => t + it.area, 0);
   g.areaRollo = g.largo * aj.rollo;
-  g.cintas = g.arcos.reduce((t, ar) => t + Math.floor(g.arco.P / CO_CINTA) + 1, 0);
   g.caja = coCaja(g);
   return g;
 }
@@ -149,6 +152,7 @@ function coPiezas(g, p) {
   for (let n = 0; n < 2; n++) p.items.push({ tipo: 'gajo', piso: true, t: p.piso, len: p.piso.x1 - p.piso.x0, across: p.piso.ancho, area: p.piso.area, nombre: 'abajo' });
   const aj = st.aj, P = coArco(g.R, 0, g.a).P;
   if (g.hc > 0) { const f = { largo: P + 2 * CO_SOLAPE, alto: g.hc + aj.selle / 2 + aj.varilla }; for (let n = 0; n < 2; n++) p.items.push({ tipo: 'rect', len: f.largo, across: f.alto, area: f.largo * f.alto, nombre: 'faldón' }); }
+  if (p === g) { const n = g.arcos.length - (g.hc === 0 ? 2 : 0); for (let k = 0; k < n; k++) p.items.push({ tipo: 'rect', len: P, across: CO_FUNDA, area: P * CO_FUNDA, nombre: 'funda' }); }
   if (p === g) g.franjas.forEach(fr => p.items.push({ tipo: 'rect', len: g.largoFranja, across: fr.w, area: fr.w * g.largoFranja, nombre: fr.nombre }));
 }
 function coAcomodo(items) {
@@ -254,6 +258,7 @@ function co3D(g, o = {}) {
   s += `<polygon points="${pisoQ.map(P2).join(' ')}" fill="#e3e7ea"/>`;
   const capa = polys.map(p => `<polygon points="${p.pr.map(v => `${v[0].toFixed(1)},${v[1].toFixed(1)}`).join(' ')}" fill="${p.fill}" fill-opacity="${p.op}" ${p.lona ? 'stroke="#5462b4" stroke-opacity=".25" stroke-width=".6"' : ''}/>`).join('');
   s += o.cae ? `<g class="cae">${capa}</g>` : capa;
+  if (o.fundas) arcos.forEach(A => { s += `<polyline points="${A.map(P2).join(' ')}" fill="none" stroke="#1f8f4e" stroke-width="9" stroke-linejoin="round" stroke-opacity=".8"/>`; });
   if (o.arcos !== false) arcos.forEach((A, k) => { s += `<polyline points="${A.map(P2).join(' ')}" fill="none" stroke="${g.arcos[k].gira ? '#d9232a' : '#39444b'}" stroke-width="${o.lona === false ? 3.5 : 2.2}" stroke-linejoin="round" ${!g.arcos[k].gira ? 'stroke-dasharray="6 4"' : ''}/>`; });
   // bisagras
   [...new Set([g.yF, g.yA])].forEach(y => [-g.a, g.a].forEach(x => { const v = coProy([x, y, g.hc]); s += `<circle cx="${v[0]}" cy="${v[1]}" r="7" fill="#d9232a" stroke="#fff" stroke-width="2"/>`; }));
@@ -265,10 +270,6 @@ function co3D(g, o = {}) {
     s += `<circle cx="${vm[0]}" cy="${vm[1]}" r="6" fill="#fff" stroke="#1f8f4e" stroke-width="3"/><text x="${vm[0]}" y="${vm[1] - 14}" font-size="22" text-anchor="middle" class="verde-t">mitad</text>`;
     s += `<g transform="translate(${v[0].toFixed(1)} ${v[1].toFixed(1)})"><rect x="-16" y="-26" width="32" height="22" rx="4" fill="#39444b"/><rect x="-7" y="-38" width="14" height="13" rx="2" fill="#14181b"/></g>`;
   }
-  if (o.cintas) arcos.forEach(A => {
-    let acc = CO_CINTA / 2;
-    for (let j = 1; j < A.length; j++) { const d = d3(A[j], A[j - 1]); acc += d; if (acc >= CO_CINTA) { acc -= CO_CINTA; const v = coProy(A[j]); s += `<circle class="ap" style="--d:${(j * .02).toFixed(2)}s" cx="${v[0].toFixed(1)}" cy="${v[1].toFixed(1)}" r="4.5" fill="#1f8f4e" stroke="#fff" stroke-width="1.5"/>`; } }
-  });
   if (o.nombres) gajos.forEach((gj, i) => {
     if (gj.tunel || (o.ver && !o.ver.includes(i))) return;
     const m = Math.floor(gj.A.length / 2), p = gj.A[m].map((t, k) => (t + gj.B[m][k]) / 2), v = coProy(p);
@@ -336,27 +337,6 @@ function coMesa(g, etapa) {
   return s + '</svg>';
 }
 
-// Las medidas del gajo completo: el metro corre desde una punta; en cada rayita, cuánto se abre a cada lado
-function coMedidasGajo(g) {
-  const t = g.normal, L = t.Lc, filas = coFilasTodo(t), wm = Math.max(t.sube, t.baja);
-  const xc = 140 + wm, W = xc + wm + 70, H = L + 80, X = v => xc + v, Y = x => 46 + x;
-  let s = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" role="img" aria-label="Medidas del gajo">${FL}`;
-  s += `<path d="M${t.contorno.map(p => `${X(p[1]).toFixed(1)} ${Y(p[0]).toFixed(1)}`).join('L')}Z" fill="#eef1fb" stroke="#5462b4" stroke-width="2"/>`;
-  s += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(L)}" stroke="#5462b4" stroke-width="2.5" stroke-dasharray="8 5"/>`;
-  s += `<text x="58" y="16" font-size="13" text-anchor="end" class="gris">metro</text><text x="${xc}" y="16" font-size="13" text-anchor="middle" class="rojo">← de la línea a cada lado →</text>`;
-  s += `<text x="58" y="32" font-size="13" text-anchor="end" class="gris">(cm)</text>`;
-  filas.forEach((r, i) => {
-    const d = `style="--d:${(i * .08).toFixed(2)}s"`, fin = i === filas.length - 1;
-    s += `<g class="ap" ${d}><line x1="${X(-r.dn)}" y1="${Y(r.x)}" x2="${X(r.up)}" y2="${Y(r.x)}" stroke="#d9232a" stroke-width="1.6"/>
-      <circle cx="${X(r.up)}" cy="${Y(r.x)}" r="3" fill="#d9232a"/><circle cx="${X(-r.dn)}" cy="${Y(r.x)}" r="3" fill="#d9232a"/>
-      <text x="58" y="${Y(r.x) + 5}" font-size="15" text-anchor="end" class="gris">${n1(r.x)}</text>
-      <text x="${X(-r.dn) - 7}" y="${Y(r.x) + 5}" font-size="15" text-anchor="end">${n1(r.dn)}</text>
-      <text x="${X(r.up) + 7}" y="${Y(r.x) + 5}" font-size="15">${n1(r.up)}</text></g>`;
-    if (fin) s += `<text x="${xc}" y="${Y(r.x) + 26}" font-size="14" text-anchor="middle" class="gris">otra punta</text>`;
-  });
-  return s + '</svg>';
-}
-
 // Zoom de una rayita: el metro, la escuadra y las dos medidas
 function coEscuadra(g) {
   const t = g.normal, r = t.filas.find(f => f.x >= 100) || t.filas[Math.floor(t.filas.length / 2)], w = (r.up + r.dn) / 2;
@@ -371,7 +351,7 @@ function coEscuadra(g) {
   s += `<g class="desliza"><path d="M${cx} ${cy} h${px(w) + 30} v14 h${-(px(w) + 16)} v60 h-14 z" fill="#c9ced3" stroke="#6b757c" stroke-width="1.5" opacity=".85"/></g>`;
   s += `<g class="ap" style="--d:1.2s">${flecha(cx + 4, cy - 14, cx + px(w), cy - 14, '#d9232a', 2.5)}<circle cx="${cx + px(w)}" cy="${cy}" r="5" fill="#d9232a"/><text x="${cx + px(w) / 2}" y="${cy - 22}" font-size="26" text-anchor="middle" class="rojo">${n1(w)}</text></g>`;
   s += `<g class="ap" style="--d:2s">${flecha(cx - 4, cy - 14, cx - px(w), cy - 14, '#d9232a', 2.5)}<circle cx="${cx - px(w)}" cy="${cy}" r="5" fill="#d9232a"/><text x="${cx - px(w) / 2}" y="${cy - 22}" font-size="26" text-anchor="middle" class="rojo">${n1(w)}</text></g>`;
-  s += `<text x="${cx}" y="${H - 14}" font-size="15" text-anchor="middle" class="gris">metro sobre la lÃ­nea Â· escuadra Â· marca a cada lado</text>`;
+  s += `<text x="${cx}" y="${H - 14}" font-size="15" text-anchor="middle" class="gris">metro sobre la lÃƒÂ­nea Ã‚Â· escuadra Ã‚Â· marca a cada lado</text>`;
   return s + '</svg>';
 }
 
@@ -403,21 +383,10 @@ function coSelle(g) {
   return s + '</svg>';
 }
 
-// El borde que toca el piso: se dobla con una varilla adentro
-function coDobladillo() {
-  const aj = st.aj, W = 360, H = 250;
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Dobladillo con varilla">${FL}`;
-  s += `<line x1="0" y1="226" x2="${W}" y2="226" stroke="#39444b" stroke-width="4"/><text x="16" y="246" font-size="15" class="gris">piso</text>`;
-  s += `<path d="M150 20 V196" stroke="#5462b4" stroke-width="7" fill="none"/><text x="140" y="60" font-size="17" text-anchor="end">lona del gajo</text>`;
-  s += `<path class="dib" pathLength="1" d="M150 196 A12 12 0 0 0 174 196 V166" stroke="#d9232a" stroke-width="7" fill="none"/>`;
-  s += `<circle class="ap" style="--d:1.2s" cx="162" cy="196" r="7" fill="#8a5a2b"/><g class="ap" style="--d:1.2s"><line x1="170" y1="204" x2="232" y2="214" stroke="#8a5a2b"/><text x="236" y="219" font-size="17" fill="#8a5a2b" style="fill:#8a5a2b">varilla</text></g>`;
-  s += `<g class="ap" style="--d:1.8s">${flecha(196, 166, 196, 208, '#d9232a', 2.5)}<text x="206" y="186" font-size="22" class="rojo">${n1(aj.varilla)} cm</text><rect x="146" y="164" width="32" height="12" fill="#d9232a" opacity=".3"/><text x="140" y="174" font-size="15" text-anchor="end" class="rojo">sella aquí</text></g>`;
-  return s + '</svg>';
-}
 // El gajo de abajo se corta como el G1, con un poco más en un borde
 function coExtra(g) {
   const tn = g.normal, L = tn.Lc, wm = Math.max(tn.sube, tn.baja), xc = 120 + wm, W = xc + wm + 30, H = L + 40, Y = x => 20 + x, X = v => xc + v;
-  const extra = st.aj.varilla - st.aj.selle / 2, borde = coCorrer(tn.dn, 7, -1);
+  const extra = CO_FUNDA_PISO - st.aj.selle / 2, borde = coCorrer(tn.dn, 7, -1);
   let s = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" role="img" aria-label="Gajo de abajo">`;
   s += `<path d="M${tn.contorno.map(p => `${X(p[1]).toFixed(1)} ${Y(p[0]).toFixed(1)}`).join('L')}Z" fill="#e3e8f8" stroke="#5462b4" stroke-width="2"/>`;
   s += `<path class="dib" pathLength="1" d="M${borde.map(p => `${X(p[1]).toFixed(1)} ${Y(p[0]).toFixed(1)}`).join('L')}" fill="none" stroke="#d9232a" stroke-width="9" stroke-linecap="round" opacity=".85"/>`;
@@ -461,17 +430,79 @@ function coBisagraLado(g, o = {}) {
   return s + '</svg>';
 }
 
-// La cinta: va pegada a la lona, abraza el tubo y se cierra con velcro
-function coCinta() {
-  const W = 360, H = 230;
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Cinta con velcro">`;
-  s += `<path d="M20 92 Q180 70 340 92" stroke="#5462b4" stroke-width="10" fill="none"/><text x="336" y="66" font-size="17" text-anchor="end" class="gris">lona (por encima)</text>`;
-  s += `<circle cx="180" cy="110" r="22" fill="#d9232a"/><text x="240" y="122" font-size="17" class="rojo">tubo del arco</text>`;
-  s += `<path class="dib" pathLength="1" d="M180 84 C140 84 140 146 182 146" stroke="#1f8f4e" stroke-width="8" fill="none"/>`;
-  s += `<path class="dib" style="--d:.8s" pathLength="1" d="M180 84 C220 84 220 146 170 146" stroke="#1f8f4e" stroke-width="8" fill="none"/>`;
-  s += `<g class="ap" style="--d:1.8s"><rect x="164" y="140" width="26" height="12" rx="2" fill="#f2c200" stroke="#a88400"/><line x1="178" y1="152" x2="180" y2="180" stroke="#14181b"/><text x="180" y="198" font-size="17" text-anchor="middle">velcro: pega al apretar</text></g>`;
-  s += `<g class="ap" style="--d:.3s"><line x1="176" y1="84" x2="70" y2="40" stroke="#14181b"/><text x="10" y="34" font-size="15">cinta sellada a la lona</text></g>`;
-  s += `<text x="${W / 2}" y="${H - 6}" font-size="15" text-anchor="middle" class="gris">una cada ${CO_CINTA} cm en cada arco</text>`;
+// La funda: una tira sellada por debajo de la unión de dos gajos; el tubo del arco pasa por adentro
+function coFunda() {
+  const W = 360, H = 250;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Funda del arco">${FL}`;
+  s += `<rect x="10" y="80" width="190" height="9" rx="2" fill="#c4cdec" stroke="#5462b4"/><text x="40" y="70" font-size="22">G1</text>`;
+  s += `<rect x="170" y="72" width="180" height="9" rx="2" fill="#9aa8dc" stroke="#5462b4"/><text x="320" y="62" font-size="22" text-anchor="middle">G2</text>`;
+  s += `<rect x="170" y="72" width="30" height="17" fill="#d9232a" opacity=".35"/><text x="185" y="36" font-size="15" text-anchor="middle" class="rojo">selle de 3 cm</text><line x1="185" y1="40" x2="185" y2="70" stroke="#d9232a"/>`;
+  s += `<circle class="ap" style="--d:1.6s" cx="185" cy="112" r="13" fill="#d9232a"/><text class="ap" style="--d:1.6s" x="250" y="124" font-size="16" class="rojo">tubo del arco</text>`;
+  s += `<path class="dib" pathLength="1" d="M135 93 C130 150 240 150 235 93" stroke="#1f8f4e" stroke-width="6" fill="none"/>`;
+  s += `<g class="ap" style="--d:1.2s"><rect x="124" y="88" width="22" height="9" fill="#d9232a" opacity=".6"/><rect x="224" y="88" width="22" height="9" fill="#d9232a" opacity=".6"/><text x="118" y="112" font-size="14" text-anchor="end" class="rojo">sella</text><text x="252" y="104" font-size="14" class="rojo">sella</text></g>`;
+  s += `<g class="ap" style="--d:2s"><text x="${W / 2}" y="182" font-size="17" text-anchor="middle" class="verde-t">funda: tira de lona de ${CO_FUNDA} cm</text><text x="${W / 2}" y="204" font-size="14" text-anchor="middle" class="gris">${CO_SELLO_F} para sellar + ${CO_FUNDA - 2 * CO_SELLO_F} que abraza el tubo + ${CO_SELLO_F} para sellar</text></g>`;
+  s += `<text x="${W / 2}" y="${H - 8}" font-size="14" text-anchor="middle" class="gris">corte visto de lado, por debajo de la cochera</text>`;
+  return s + '</svg>';
+}
+// En los arcos de las puntas no hay vecino: el mismo borde del gajo da la vuelta al tubo
+function coFundaPiso() {
+  const W = 360, H = 220, extra = CO_FUNDA_PISO - st.aj.selle / 2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Funda del arco de la punta">${FL}`;
+  s += `<line x1="0" y1="134" x2="${W}" y2="134" stroke="#39444b" stroke-width="4"/><text x="12" y="156" font-size="14" class="gris">piso</text>`;
+  s += `<path d="M350 84 H170" stroke="#5462b4" stroke-width="7" fill="none"/><text x="300" y="70" font-size="20" text-anchor="middle">G${CO.g ? CO.g.N : 3}</text>`;
+  s += `<circle cx="170" cy="101" r="13" fill="#d9232a"/><text x="110" y="70" font-size="15" text-anchor="middle" class="rojo">tubo del arco de la punta</text><line x1="130" y1="74" x2="162" y2="92" stroke="#d9232a"/>`;
+  s += `<path class="dib" pathLength="1" d="M170 84 A17 17 0 0 0 170 118 H222" stroke="#d9232a" stroke-width="7" fill="none" stroke-linecap="round"/>`;
+  s += `<g class="ap" style="--d:1.4s"><rect x="194" y="84" width="28" height="34" fill="#d9232a" opacity=".25"/><text x="208" y="182" font-size="15" text-anchor="middle" class="rojo">sella aquí</text><line x1="208" y1="166" x2="208" y2="120" stroke="#d9232a"/></g>`;
+  s += `<g class="ap" style="--d:2s"><text x="${W / 2 + 60}" y="206" font-size="18" text-anchor="middle" class="rojo">este borde lleva ${n1(extra)} cm más</text></g>`;
+  return s + '</svg>';
+}
+// Meter el tubo ya doblado por su funda, desde una punta
+function coMeter(g, u) {
+  const pts = g.arco.pts, P = g.arco.P, a = g.a, W = 2 * a + 120, H = g.R + 80, X = x => W / 2 + x, Y = z => H - 30 - z;
+  let acc = 0, corte = pts.length;
+  for (let i = 1; i < pts.length; i++) { acc += d3(pts[i], pts[i - 1]); if (acc > u * P) { corte = i; break; } }
+  let s = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" role="img" aria-label="Meter el tubo en la funda">`;
+  s += `<line x1="0" y1="${Y(0)}" x2="${W}" y2="${Y(0)}" stroke="#39444b" stroke-width="3"/>`;
+  s += `<polyline points="${coP(pts.map(p => [p[0], p[2]]), X, Y)}" fill="none" stroke="#1f8f4e" stroke-opacity=".35" stroke-width="26" stroke-linejoin="round"/>`;
+  s += `<text x="${X(0)}" y="${Y(g.R) - 22}" font-size="24" text-anchor="middle" class="verde-t">funda</text>`;
+  if (corte > 1) s += `<polyline points="${coP(pts.slice(0, corte).map(p => [p[0], p[2]]), X, Y)}" fill="none" stroke="#d9232a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const q = pts[Math.min(corte, pts.length) - 1];
+  s += `<text x="${X(-a)}" y="${Y(0) + 24}" font-size="20" text-anchor="middle" class="rojo">entra el tubo ↑</text>`;
+  if (u > .02 && u < .98) s += `<circle cx="${X(q[0])}" cy="${Y(q[2])}" r="9" fill="#d9232a" stroke="#fff" stroke-width="2"/>`;
+  return s + '</svg>';
+}
+// Sellar sobre la guía curva, como en la plegable
+function coGuia() {
+  const W = 360, H = 240;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Guía curva">`;
+  s += `<rect x="10" y="96" width="160" height="12" fill="#c8a876"/><rect x="20" y="108" width="10" height="110" fill="#a8885a"/><rect x="150" y="108" width="10" height="110" fill="#a8885a"/><text x="90" y="134" font-size="16" text-anchor="middle" class="gris">mesa</text>`;
+  s += `<line x1="0" y1="218" x2="${W}" y2="218" stroke="#39444b" stroke-width="3"/><text x="${W - 12}" y="236" font-size="14" text-anchor="end" class="gris">piso</text>`;
+  s += `<path d="M150 96 Q290 96 330 216" stroke="#8a5a2b" stroke-width="10" fill="none"/><text x="266" y="178" font-size="16" text-anchor="end" fill="#8a5a2b" style="fill:#8a5a2b">guía curva</text>`;
+  s += `<path class="dib" pathLength="1" d="M30 90 L150 90 Q284 90 322 210" stroke="#5462b4" stroke-width="5" fill="none"/>`;
+  s += `<path class="dib" style="--d:.6s" pathLength="1" d="M30 84 L150 84 Q280 84 316 206" stroke="#9aa8dc" stroke-width="5" fill="none"/>`;
+  s += `<g class="ap" style="--d:1.4s"><text x="60" y="78" font-size="15">los 2 bordes, uno encima del otro</text></g>`;
+  s += `<g class="pasa-guia"><rect x="-22" y="-30" width="44" height="26" rx="4" fill="#39444b"/><rect x="-8" y="-44" width="16" height="15" rx="3" fill="#14181b"/><animateMotion dur="3s" fill="freeze" path="M60 84 L150 84 Q280 84 316 206" rotate="auto"/></g>`;
+  return s + '</svg>';
+}
+// Medidas del gajo completo (azul) o de uno de los 2 de abajo (rojo)
+function coMedidasGajo(g, piso) {
+  const t = piso ? g.piso : g.normal, L = t.Lc, filas = coFilasTodo(t), wm = Math.max(t.sube, t.baja);
+  const col = piso ? '#d9232a' : '#5462b4', fondo = piso ? '#f6d0d2' : '#eef1fb', raya = piso ? '#14181b' : '#d9232a';
+  const xc = 140 + wm, W = xc + wm + 70, H = L + 80, X = v => xc + v, Y = x => 46 + x;
+  let s = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" role="img" aria-label="Medidas del gajo">${FL}`;
+  s += `<path d="M${t.contorno.map(p => `${X(p[1]).toFixed(1)} ${Y(p[0]).toFixed(1)}`).join('L')}Z" fill="${fondo}" stroke="${col}" stroke-width="2.5"/>`;
+  s += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(L)}" stroke="${col}" stroke-width="2.5" stroke-dasharray="8 5"/>`;
+  s += `<text x="58" y="16" font-size="13" text-anchor="end" class="gris">metro</text><text x="${xc}" y="16" font-size="13" text-anchor="middle" class="rojo">${piso ? 'lado del tubo ← | → lado normal' : '← de la línea a cada lado →'}</text>`;
+  s += `<text x="58" y="32" font-size="13" text-anchor="end" class="gris">(cm)</text>`;
+  filas.forEach((r, i) => {
+    const d = `style="--d:${(i * .08).toFixed(2)}s"`, fin = i === filas.length - 1;
+    s += `<g class="ap" ${d}><line x1="${X(-r.dn)}" y1="${Y(r.x)}" x2="${X(r.up)}" y2="${Y(r.x)}" stroke="${raya}" stroke-width="1.6"/>
+      <circle cx="${X(r.up)}" cy="${Y(r.x)}" r="3" fill="${raya}"/><circle cx="${X(-r.dn)}" cy="${Y(r.x)}" r="3" fill="${raya}"/>
+      <text x="58" y="${Y(r.x) + 5}" font-size="15" text-anchor="end" class="gris">${n1(r.x)}</text>
+      <text x="${X(-r.dn) - 7}" y="${Y(r.x) + 5}" font-size="15" text-anchor="end" ${piso ? 'class="rojo"' : ''}>${n1(r.dn)}</text>
+      <text x="${X(r.up) + 7}" y="${Y(r.x) + 5}" font-size="15">${n1(r.up)}</text></g>`;
+    if (fin) s += `<text x="${xc}" y="${Y(r.x) + 26}" font-size="14" text-anchor="middle" class="gris">otra punta</text>`;
+  });
   return s + '</svg>';
 }
 
@@ -611,7 +642,8 @@ const CO_ESC = {
   ] }),
   lona: g => ({ titulo: 'Lona', arriba: `<div class="total"><span class="etq">Compra</span><b>${n1(Math.ceil(g.largo / 50) / 2 + .5)} m</b><span>de rollo de ${n0(st.aj.rollo)} cm</span></div>`, cuadros: [
     { t: 'Así salen las piezas del rollo.', svg: () => coRolloFilas(g) },
-    { t: g.hc === 0 ? `${B(2 * g.N)} gajos: todos iguales, los 2 rojos con un poquito más.` : `${B(2 * g.N)} gajos, todos iguales.`, svg: () => coPlantilla(g) },
+    { t: g.hc === 0 ? `${B(2 * g.N)} gajos: ${B(2 * g.N - 2)} azules iguales y ${B(2)} rojos más anchos.` : `${B(2 * g.N)} gajos, todos iguales.`, svg: () => coPlantilla(g) },
+    { t: `Y ${B(g.arcos.length - (g.hc === 0 ? 2 : 0))} tiras para las fundas de los arcos.`, svg: () => coFunda() },
   ] }),
   cortar: g => {
     const ix = coIdx(g), N = g.N;
@@ -620,16 +652,17 @@ const CO_ESC = {
       { t: `Raya la ${B('línea del centro')}, a lo largo.`, svg: () => coMesa(g, 2) },
       { t: `Con el metro, una rayita cada ${B('20 cm')}.`, svg: () => coMesa(g, 3) },
       { t: 'En cada rayita: escuadra y marca a cada lado.', svg: () => coEscuadra(g) },
-      { t: 'Estas son las medidas de cada rayita.', svg: () => coMedidasGajo(g), alto: true },
+      { t: `Medidas de cada rayita. Ya traen ${B(n1(st.aj.selle / 2) + ' cm')} para sellar en cada borde.`, svg: () => coMedidasGajo(g, false), alto: true },
       { t: 'Así quedan los puntos.', svg: () => coMesa(g, 4) },
       { t: `Une los puntos con una ${B('regla flexible')}.`, svg: () => coMesa(g, 5) },
       { t: 'Corta por la línea.', svg: () => coMesa(g, 6) },
       { t: `Listo el primero. Escríbele ${B('G1')}.`, svg: () => coMesa(g, 7) },
-      { t: `Úsalo de plantilla: calca y corta los otros ${B(2 * N - 1)}.`, svg: () => coPlantilla(g) },
+      { t: g.hc === 0 ? `Úsalo de plantilla: calca y corta ${B(2 * N - 3)} azules más.` : `Úsalo de plantilla: calca y corta los otros ${B(2 * N - 1)}.`, svg: () => coPlantilla(g) },
       ...(g.hc === 0 ? [
         { t: `El ${B('G' + N)} y el ${B('G' + 2 * N)} llegan al piso.`, svg: () => co3D(g, { rojo: [ix.ad[N - 1], ix.at[N - 1]], nombres: true }) },
-        { t: `Ese borde se dobla con una ${B('varilla')} adentro.`, svg: () => coDobladillo() },
-        { t: `Por eso a esos 2 les das ${B(n1(st.aj.varilla - st.aj.selle / 2) + ' cm')} más en ese borde.`, svg: () => coExtra(g) },
+        { t: 'Ese borde da la vuelta al tubo del arco de la punta.', svg: () => coFundaPiso() },
+        { t: `Por eso esos 2 llevan ${B(n1(CO_FUNDA_PISO - st.aj.selle / 2) + ' cm')} más en ese borde.`, svg: () => coExtra(g) },
+        { t: `Medidas de los 2 rojos (${B('G' + N)} y ${B('G' + 2 * N)}). Córtalos aparte.`, svg: () => coMedidasGajo(g, true), alto: true },
       ] : []),
     ] };
   },
@@ -649,16 +682,18 @@ const CO_ESC = {
     else pasos.push({ t: 'Une cada mitad con el túnel del medio.', svg: () => co3D(g, { nombres: true }) });
     return { titulo: 'Sellar', cuadros: [
       { t: `Pon el ${G(1)} y el ${G(2)} lado a lado: punta con punta, rayita con rayita.`, svg: () => coDosGajos(g) },
-      { t: `Un borde encima del otro ${B(n1(st.aj.selle) + ' cm')}, y sella.`, svg: () => coSelle(g) },
+      { t: `Cada borde trae ${B(n1(st.aj.selle / 2))}: uno encima del otro quedan ${B(n1(st.aj.selle) + ' cm')} para sellar.`, svg: () => coSelle(g) },
+      { t: 'Como en la plegable: sobre la guía curva, y sellas avanzando.', svg: () => coGuia() },
       ...pasos,
       { t: `Todas las puntas llegan al tornillo: refuérzalas con un círculo de lona, por dentro y por fuera.`, svg: () => coBisagraLado(g, { lona: true, parche: true }) },
     ] };
   },
   montar: g => ({ titulo: 'Montar', cuadros: [
-    { t: 'Arma los arcos cerrados.', svg: () => co3D(g, { lona: false }) },
-    { t: 'Pon la lona encima.', svg: () => co3D(g, { cae: true }) },
-    { t: `Amárrala a los arcos: ${B(g.cintas + ' cintas')} (puntos verdes).`, svg: () => co3D(g, { cintas: true }) },
-    { t: `Cada cinta abraza el tubo y se cierra con ${B('velcro')}.`, svg: () => coCinta() },
+    { t: `Los arcos van metidos en ${B('fundas')} de lona: sin huecos ni amarres.`, svg: () => co3D(g, { fundas: true }) },
+    { t: `Debajo de cada unión de dos gajos se sella una ${B('tira')}: esa es la funda.`, svg: () => coFunda() },
+    ...(g.hc === 0 ? [{ t: 'En las puntas, el mismo borde del gajo hace la funda.', svg: () => coFundaPiso() }] : []),
+    { t: 'Mete cada tubo ya doblado por su funda, desde una punta.', anim: { dur: 3600, f: u => coMeter(g, u) } },
+    { t: 'Atornilla las puntas de los arcos en la bisagra.', svg: () => coBisagraLado(g, { lona: true }) },
   ] }),
   mover: g => ({ titulo: 'Abrir y cerrar', cuadros: [
     { t: 'Cose una manija en el arco de adelante.', svg: () => co3D(g, { manija: true }) },
