@@ -190,6 +190,45 @@ svg .azul { fill: var(--azul); }
 .co-tabla td.azul { color: var(--azul); }
 svg .boca { stroke: var(--rojo); stroke-width: 3; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
 
+/* Cochera visual: láminas animadas */
+.co-lamina { background: var(--hoja); border: 1px solid var(--linea); border-radius: 18px; padding: 10px; display: grid; gap: 10px; }
+.co-svg { min-height: 200px; display: grid; place-items: center; }
+.co-svg svg { width: 100%; height: auto; display: block; max-height: 62vh; }
+.co-svg.alto svg { max-height: none; }
+.co-svg svg text { font-family: var(--f-num); font-weight: 700; }
+.co-frase { margin: 0; text-align: center; font-size: 1.3rem; font-weight: 700; line-height: 1.3; min-height: 2.6em; text-wrap: balance; }
+.co-frase b { color: var(--rojo); }
+.co-ctrl { display: grid; grid-template-columns: 56px 1fr 56px 56px; gap: 8px; align-items: center; }
+.co-b { height: 52px; border-radius: 14px; border: 2px solid var(--linea); background: var(--fondo); font-size: 1.2rem; font-weight: 800; }
+#coPlay { background: var(--tinta); color: #fff; border-color: var(--tinta); }
+.co-dots { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.co-dots button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 0; background: var(--linea); }
+.co-dots button[aria-current] { background: var(--rojo); width: 26px; border-radius: 6px; }
+.co-barra { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-weight: 700; color: var(--grafito); }
+.co-barra input { width: 100%; height: 44px; accent-color: var(--rojo); }
+svg .co-cota { fill: var(--tinta); }
+svg .verde-t { fill: var(--verde); }
+svg .ap { opacity: 0; animation: coAp .45s ease forwards; animation-delay: var(--d, 0s); }
+svg .dib { stroke-dasharray: 1; stroke-dashoffset: 1; animation: coDib 1.4s ease forwards; animation-delay: var(--d, 0s); }
+svg .dib.lento { animation-duration: 3s; }
+svg .desenrolla { transform-box: fill-box; transform-origin: left; animation: coDesen 1s ease both; }
+svg .desenrolla-v { transform-box: fill-box; transform-origin: top; animation: coDesenV 1s ease both; }
+@keyframes coDesenV { from { transform: scaleY(0); } }
+svg .levanta { animation: coLev 1s ease both; }
+svg .desliza { animation: coDesl 1s ease both; }
+svg .baja { animation: coBaja 1s ease both; }
+svg .pasa { animation: coPasa 2.4s ease-in-out 1.2s both; }
+svg .cae { animation: coCae 1.4s cubic-bezier(.3,.7,.4,1) both; }
+@keyframes coAp { to { opacity: 1; } }
+@keyframes coDib { to { stroke-dashoffset: 0; } }
+@keyframes coDesen { from { transform: scaleX(0); } }
+@keyframes coLev { from { fill-opacity: 0; } to { fill-opacity: 1; } }
+@keyframes coDesl { from { transform: translateX(160px); opacity: 0; } }
+@keyframes coBaja { from { transform: translateY(40px); opacity: .3; } }
+@keyframes coPasa { from { transform: translateX(0); } to { transform: translateX(310px); } }
+@keyframes coCae { from { transform: translateY(-220px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { svg .ap, svg .dib, svg .desenrolla, svg .levanta, svg .desliza, svg .baja, svg .pasa, svg .cae { animation-duration: .01s; animation-delay: 0s; } }
+
 /* Pestañas */
 .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--hoja); border-top: 1px solid var(--linea);
   padding: 6px max(6px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left)); }

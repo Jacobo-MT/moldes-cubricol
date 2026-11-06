@@ -335,7 +335,7 @@ function ir(v) {
   $('#tabs').hidden = v === 'cochera';
   $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : `Plegable ${tam()}`;
   if (v === 'ajustes') pintarAjustes();
-  if (v === 'cochera') pintarCochera();
+  if (v === 'cochera') pintarCochera(); else if (typeof coParar === 'function') coParar();
   window.scrollTo(0, 0);
 }
 
