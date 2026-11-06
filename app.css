@@ -46,7 +46,7 @@ h2 { font-size: 1.2rem; font-weight: 700; margin: 0; }
 .vista { display: grid; gap: 18px; }
 
 /* Elegir carpa */
-.tipos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tipos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .tipo { display: grid; justify-items: center; gap: 2px; padding: 14px 10px; border-radius: 14px; border: 2px solid var(--linea); background: var(--hoja); }
 .tipo svg { width: 100%; max-width: 120px; height: auto; fill: var(--lona); stroke: var(--azul); stroke-width: 2.5; stroke-linejoin: round; }
 .tipo b { font-size: 1.25rem; }
@@ -145,6 +145,40 @@ svg .rollobg { fill: var(--fondo); stroke: var(--linea); vector-effect: non-scal
 .ajuste input:disabled { background: var(--fondo); color: var(--gris); }
 .ajuste .auto { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; font-size: .92rem; }
 .ajuste .auto input { width: 22px; height: 22px; accent-color: var(--rojo); }
+
+/* Cochera: guía paso a paso */
+.co-pasos { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 4px; scrollbar-width: none; }
+.co-pasos button { flex: none; display: flex; align-items: center; gap: 8px; border: 2px solid var(--linea); background: var(--hoja); border-radius: 999px; padding: 8px 14px 8px 8px; font-weight: 700; font-size: .95rem; }
+.co-pasos button span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--fondo); font: 700 .9rem var(--f-num); }
+.co-pasos button[aria-current] { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+.co-pasos button[aria-current] span { background: var(--rojo); }
+#coCuerpo > .etq { margin: 0; }
+.co-tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.co-tres .stepper { grid-template-columns: 34px 1fr 34px; }
+.co-tres .stepper input { font-size: 1.3rem; }
+.co-error { background: var(--rojo-suave); color: var(--rojo); font-weight: 700; }
+.co-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.co-check { width: 100%; display: grid; grid-template-columns: 28px 22px 1fr; gap: 10px; align-items: start; text-align: left; background: var(--hoja); border: 1px solid var(--linea); border-radius: 12px; padding: 12px; }
+.co-caja { width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--linea); display: grid; place-items: center; }
+.co-num { font: 700 1.1rem/1.5 var(--f-num); color: var(--gris); }
+.co-txt { line-height: 1.4; }
+.co-check[aria-pressed=true] { background: #eaf6ef; border-color: #bfe3cd; }
+.co-check[aria-pressed=true] .co-caja { background: var(--verde); border-color: var(--verde); }
+.co-check[aria-pressed=true] .co-caja::after { content: ""; width: 7px; height: 13px; border: solid #fff; border-width: 0 3px 3px 0; transform: translateY(-2px) rotate(45deg); }
+.co-check[aria-pressed=true] .co-txt { color: var(--gris); text-decoration: line-through; text-decoration-color: #1f8f4e80; }
+.co-palabras { margin: 0; display: grid; gap: 8px; }
+.co-palabras div { background: var(--hoja); border: 1px solid var(--linea); border-radius: 12px; padding: 10px 12px; }
+.co-palabras dt { font-weight: 800; }
+.co-palabras dd { margin: 2px 0 0; color: var(--grafito); font-size: .95rem; }
+.co-tabla-wrap { overflow-x: auto; }
+.co-tabla { width: 100%; border-collapse: collapse; background: var(--hoja); border-radius: 12px; overflow: hidden; }
+.co-tabla th { font-size: .74rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--gris); text-align: left; padding: 10px; background: var(--fondo); }
+.co-tabla td { padding: 9px 10px; border-top: 1px solid var(--linea); }
+.co-tabla td.num { font: 700 1.25rem var(--f-num); }
+.co-tabla td.num small { font: 600 .8rem var(--f); color: var(--gris); }
+.co-tabla td.rojo { color: var(--rojo); }
+svg .piso { stroke: var(--grafito); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+svg .boca { stroke: var(--rojo); stroke-width: 3; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
 
 /* Pestañas */
 .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--hoja); border-top: 1px solid var(--linea);

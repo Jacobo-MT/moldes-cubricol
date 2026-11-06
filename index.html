@@ -55,6 +55,10 @@
           <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M8 52V34L50 8L92 34V52Z"/></svg>
           <b>Fija</b><span>pronto</span>
         </button>
+        <button class="tipo" id="tipoCochera">
+          <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M6 52V30Q6 10 26 10H62Q92 10 94 52Z"/></svg>
+          <b>Cochera</b><span>guía paso a paso</span>
+        </button>
       </div>
       <h2>Tamaño</h2>
       <div class="tamanos" id="tamanos">
@@ -131,6 +135,16 @@
       <p class="nota" id="compartido" aria-live="polite"></p>
     </section>
 
+    <!-- Cochera plegable: guía paso a paso -->
+    <section class="vista" id="v-cochera" hidden>
+      <nav class="co-pasos" id="coPasos" aria-label="Pasos"></nav>
+      <div class="vista" id="coCuerpo"></div>
+      <div class="acciones">
+        <button class="cta" id="coSig"></button>
+        <button class="sec" id="coAtras">← Paso anterior</button>
+      </div>
+    </section>
+
     <!-- Ajustes -->
     <section class="vista" id="v-ajustes" hidden>
       <h1>Ajustes del taller</h1>
@@ -154,5 +168,6 @@
 </div>
 
 <script src="app.js"></script>
+<script src="cochera.js"></script>
 </body>
 </html>

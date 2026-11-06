@@ -332,7 +332,10 @@ function ir(v) {
   st.vista = v;
   $$('.vista[id^="v-"]').forEach(s => { s.hidden = s.id !== 'v-' + v; });
   $$('#tabs button').forEach(b => { if (b.dataset.v === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  $('#tabs').hidden = v === 'cochera';
+  $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : `Plegable ${tam()}`;
   if (v === 'ajustes') pintarAjustes();
+  if (v === 'cochera') pintarCochera();
   window.scrollTo(0, 0);
 }
 
@@ -355,8 +358,8 @@ $$('.stepper button').forEach(b => b.addEventListener('click', () => {
 ['largo', 'ancho'].forEach(id => $('#' + id).addEventListener('change', e => fijarMedida(id, parseFloat(String(e.target.value).replace(',', '.')) || 3)));
 $('#verMoldes').addEventListener('click', () => ir('piezas'));
 $('#pillCarpa').addEventListener('click', () => ir('carpa'));
-$('#btnAjustes').addEventListener('click', () => ir('ajustes'));
-$('#cerrarAjustes').addEventListener('click', () => ir('piezas'));
+$('#btnAjustes').addEventListener('click', () => { st.desdeCochera = st.vista === 'cochera'; ir('ajustes'); });
+$('#cerrarAjustes').addEventListener('click', () => ir(st.desdeCochera ? 'cochera' : 'piezas'));
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) ir(b.dataset.v); });
 
 // curva
