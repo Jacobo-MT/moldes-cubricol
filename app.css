@@ -178,6 +178,16 @@ svg .rollobg { fill: var(--fondo); stroke: var(--linea); vector-effect: non-scal
 .co-tabla td.num small { font: 600 .8rem var(--f); color: var(--gris); }
 .co-tabla td.rojo { color: var(--rojo); }
 svg .piso { stroke: var(--grafito); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+svg .arco { stroke: var(--rojo); stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+svg .arco.fijo { stroke: var(--grafito); stroke-dasharray: 6 4; }
+svg .fantasma { fill: none; stroke: var(--gris); stroke-width: 1.5; stroke-dasharray: 4 5; vector-effect: non-scaling-stroke; }
+svg .faldon { fill: var(--azul); fill-opacity: .25; }
+svg .faldon-arriba { stroke: var(--azul); stroke-width: 6; opacity: .45; vector-effect: non-scaling-stroke; }
+svg .velcro { fill: var(--verde); opacity: .35; }
+svg .azul { fill: var(--azul); }
+.co-estados { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.co-estados svg { width: 100%; height: auto; display: block; }
+.co-tabla td.azul { color: var(--azul); }
 svg .boca { stroke: var(--rojo); stroke-width: 3; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
 
 /* Pestañas */
