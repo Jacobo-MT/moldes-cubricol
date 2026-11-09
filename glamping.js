@@ -5,7 +5,7 @@
 // y = 0 en la punta del marco (la "escalera"), la pared de la puerta está en y = VUELO y la de atrás en y = FONDO.
 // 9-nov: los 3,10 m de largo total INCLUYEN el cubo de 60: la carpa mide 250 (con la escalera) + 60 del cubo.
 const GL = {
-  ROLLO: 200, SELLE: 3.5, DOB: 5, FONDO: 250, VUELO: 50,
+  ROLLO: 200, SELLE: 3.5, DOB: 5, FONDO: 250, VUELO: 70,
   PERFIL: [[0, 0], [125, 300], [265, 250], [300, 0]],   // suelo izq · pico · esquina pequeña · suelo der
   CUBO: { w: 300, h: 250, d: 60 },
   CREM: [100, 200],                                       // cremalleras: a 100 y 200 cm de la esquina izquierda
@@ -265,7 +265,7 @@ const GL_ESC = {
   inicio: g => ({ titulo: 'El glamping', cuadros: [
     { t: 'Así queda: <b>todo en lona</b>.', anim: { dur: 5000, f: u => gl3D(g, -0.7 + u * 1.4) } },
     { t: `Frente: <b>300</b> de base, pico de <b>300</b>, esquina pequeña de <b>250</b>.`, svg: () => glCara(g, { medidas: true }) },
-    { t: `Largo total <b>310</b>: la carpa <b>250</b> (con <b>50</b> de escalera) + el cubo <b>60</b>.`, svg: () => gl3D(g, 0.75, { textos: [[[300, 125, -22], '250 carpa'], [[300, 25, 40], '50 escalera'], [[300, 280, -22], '60 cubo']] }) },
+    { t: `Largo total <b>310</b>: la carpa <b>250</b> (con <b>70</b> de escalera) + el cubo <b>60</b>.`, svg: () => gl3D(g, 0.75, { textos: [[[300, 125, -22], '250 carpa'], [[300, 35, 40], '70 escalera'], [[300, 280, -22], '60 cubo']] }) },
     { t: `Ventana de <b>100 × 100</b> que sale <b>50</b> arriba.`, svg: () => gl3D(g, -0.9, { resalta: 'vent' }) },
     { t: `Atrás, un cubo de <b>300 × 250</b> que sale <b>60</b>.`, svg: () => gl3D(g, 2.7, { resalta: 'cubo' }) },
   ] }),
