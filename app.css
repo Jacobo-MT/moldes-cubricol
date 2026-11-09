@@ -46,7 +46,7 @@ h2 { font-size: 1.2rem; font-weight: 700; margin: 0; }
 .vista { display: grid; gap: 18px; }
 
 /* Elegir carpa */
-.tipos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tipos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .tipo { display: grid; justify-items: center; gap: 2px; padding: 14px 10px; border-radius: 14px; border: 2px solid var(--linea); background: var(--hoja); }
 .tipo svg { width: 100%; max-width: 120px; height: auto; fill: var(--lona); stroke: var(--azul); stroke-width: 2.5; stroke-linejoin: round; }
 .tipo b { font-size: 1.25rem; }

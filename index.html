@@ -59,6 +59,10 @@
           <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M6 52V30Q6 10 26 10H62Q92 10 94 52Z"/></svg>
           <b>Cochera</b><span>retráctil</span>
         </button>
+        <button class="tipo" id="tipoGlamping">
+          <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M10 54L40 8L84 18L90 54Z"/></svg>
+          <b>Glamping</b><span>tipo A</span>
+        </button>
       </div>
       <h2>Tamaño</h2>
       <div class="tamanos" id="tamanos">
@@ -145,6 +149,16 @@
       </div>
     </section>
 
+    <!-- Glamping tipo A -->
+    <section class="vista" id="v-glamping" hidden>
+      <nav class="co-pasos" id="glPasos" aria-label="Pasos"></nav>
+      <div class="vista" id="glCuerpo"></div>
+      <div class="acciones">
+        <button class="cta" id="glSig"></button>
+        <button class="sec" id="glAtras">← Paso anterior</button>
+      </div>
+    </section>
+
     <!-- Ajustes -->
     <section class="vista" id="v-ajustes" hidden>
       <h1>Ajustes del taller</h1>
@@ -169,5 +183,6 @@
 
 <script src="app.js"></script>
 <script src="cochera.js"></script>
+<script src="glamping.js"></script>
 </body>
 </html>
