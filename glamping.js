@@ -5,7 +5,8 @@
 // y = 0 en la punta del marco (la "escalera"), la pared de la puerta está en y = VUELO y la de atrás en y = FONDO.
 // 12-nov: largo total 390 = escalera de madera 80 + carpa 250 (de la puerta a la pared de atrás) + cubo 60.
 const GL = {
-  ROLLO: 200, SELLE: 3,   // 12-nov: selle de 3 cm, 1,5 en cada borde que se une
+  ROLLO: 207, SELLE: 3,   // 12-nov: el rollo mide 207 de ancho
+    // 12-nov: selle de 3 cm, 1,5 en cada borde que se une
   DOB: 3, FONDO: 330, VUELO: 80,
   PERFIL: [[0, 0], [125, 300], [265, 250], [300, 0]],   // suelo izq · pico · esquina pequeña · suelo der
   CUBO: { w: 300, h: 250, d: 60 },
@@ -124,7 +125,7 @@ function glPiezas(g) {
 const glP = (g, id) => g.piezas.find(p => p.id === id);
 const glN = p => `<span class="gl-n" style="background:${p.col}">${p.n}</span>`;
 
-// Acomoda las piezas en el rollo de 2 m, fila por fila. rot 1 = girada 90°.
+// Acomoda las piezas en el rollo (207 de ancho), fila por fila. rot 1 = girada 90°.
 function glAcomodar(g) {
   const GAP = 3, P = id => glP(g, id), cubos = g.piezas.filter(p => /^c\d/.test(p.id));
   const filas = [];
@@ -139,16 +140,19 @@ function glAcomodar(g) {
     filas.push({ pos, len, alto, n: filas.length + 1 });
   };
   const corrido = (lista, y) => { let x = 0; return lista.map(([p, rot]) => { const it = [p, rot, x, y]; x += (rot ? p.h : p.w) + GAP; return it; }); };
-  const b = P('tB');
+  const b = P('tB'), t = P('tapa'), ti = P('tira'), te = P('vTe'), tr = P('tri'), co = P('vCos'), Y = b.h + GAP;
   fila([[P('tA'), 0, 0, 0]]);
-  fila([[b, 0, 0, 0], ...corrido([[P('vCos'), 1], [P('vCos'), 1], [P('vTe'), 0], [P('tri'), 0]], b.h + GAP)]);
+  // sobrante del techo: tapa, techito, triángulo y un costado; debajo, las 2 tiras
+  const xTe = t.w + GAP, xTr = xTe + te.w + GAP, xCo = xTr + tr.w + GAP;
+  fila([[b, 0, 0, 0], [t, 0, 0, Y], [te, 0, xTe, Y], [tr, 0, xTr, Y], [co, 1, xCo, Y],
+        [ti, 1, 0, Y + t.h + GAP], [ti, 1, xTe, Y + Math.max(te.h, tr.h) + GAP]]);
   fila([[P('fAb'), 0, 0, 0]]);
   fila([[P('fAr'), 1, 0, 0]]);
   cubos.slice(0, -1).forEach(c => fila([[c, 1, 0, 0]]));
   const u = cubos[cubos.length - 1], eg = P('eG'), ec = P('eC');
   fila([[u, 1, 0, 0], [eg, 1, 0, u.w + GAP], [ec, 1, 0, u.w + eg.w + 2 * GAP]]);
-  const t = P('tapa'), ti = P('tira');
-  fila([[t, 0, 0, 0], [ti, 1, 0, t.h + GAP], [ti, 1, 0, t.h + 2 * GAP + ti.w], [P('vCara'), 0, t.w + GAP, 0]]);
+  const ca = P('vCara');
+  fila([[ca, 0, 0, 0], [co, 1, 0, ca.h + GAP]]);
   filas.forEach(f => f.pos.forEach(q => { if (!q.p.fila) q.p.fila = f.n; }));
   return filas;
 }
@@ -301,7 +305,7 @@ function glMesa(poly, o = {}) {
 // número de pieza en un círculo de su color
 const glBola = (x, y, p, r = 20) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${p.col}" stroke="#14181b" stroke-width="2.5"/><text x="${x.toFixed(1)}" y="${(y + r * 0.38).toFixed(1)}" font-size="${r * 1.1}" text-anchor="middle" fill="#14181b">${p.n}</text>`;
 
-// El rollo de 2 m, fila por fila: cada pieza con su color y su número
+// El rollo, fila por fila: cada pieza con su color y su número
 function glRollo(g, o = {}) {
   const R = GL.ROLLO, fh = R + 40, Lmax = Math.max(...g.filas.map(f => f.len)), W = Lmax + 200, filas = o.filas ? g.filas.filter(f => o.filas.includes(f.n)) : g.filas, H = filas.length * fh + 10;
   let s = `<svg viewBox="0 0 ${W.toFixed(0)} ${H}" role="img" aria-label="Cómo sale del rollo">`;
@@ -411,7 +415,7 @@ const GL_ESC = {
     { t: `Ventana de <b>100 × 100</b> que sale <b>50</b> arriba.`, svg: () => gl3D(g, -0.9, { resalta: 'vent' }) },
     { t: `Atrás, un cubo de <b>300 × 250</b> que sale <b>60</b>.`, svg: () => gl3D(g, 2.7, { resalta: 'cubo' }) },
   ] }),
-  lona: g => ({ titulo: 'Las piezas', arriba: `<div class="total"><span class="etq">Compra más o menos</span><b>${n0(Math.ceil(g.total / 100))} m</b><span>de rollo de 2 m (ya con 10 % de desperdicio)</span></div>`, cuadros: [
+  lona: g => ({ titulo: 'Las piezas', arriba: `<div class="total"><span class="etq">Compra más o menos</span><b>${n0(Math.ceil(g.total / 100))} m</b><span>de rollo de ${n0(GL.ROLLO)} de ancho (ya con 10 % de desperdicio)</span></div>`, cuadros: [
     { t: `Son <b>${g.piezas.reduce((a, p) => a + p.cant, 0)} piezas</b>. Cada una tiene su <b>número</b> y su <b>color</b>: así sale del rollo.`, svg: () => glRollo(g), alto: true },
     { t: `Color = parte: <b>azul</b> techo, <b>verde</b> frente, <b>naranja</b> cubo, <b>morado</b> ventana.`, svg: () => glRollo(g), alto: true },
     ...g.piezas.map(p => glFichaCu(g, p.id, `${glN(p)} <b>${p.nombre}</b>${p.cant > 1 ? ` (corta <b>${p.cant}</b>)` : ''}: los números son el borde <b>de corte</b>, ya con el selle.`)),
@@ -516,7 +520,7 @@ function pintarGlamping() {
   glCuadro(0);
 }
 function glTexto(g) {
-  let t = `*GLAMPING 3 × 3,90* (rollo de 2 m · selle ${n1(GL.SELLE)}: ${n1(GL.SELLE / 2)} en cada borde · dobladillo ${GL.DOB})
+  let t = `*GLAMPING 3 × 3,90* (rollo de ${n0(GL.ROLLO)} de ancho · selle ${n1(GL.SELLE)}: ${n1(GL.SELLE / 2)} en cada borde · dobladillo ${GL.DOB})
 Medidas de CORTE, ya con selle y dobladillo:
 `;
   g.piezas.forEach(p => {
@@ -528,7 +532,7 @@ Medidas de CORTE, ya con selle y dobladillo:
 
 *Puerta:* cremalleras rectas a 100 y 200 (${n0(g.crem[0].z)} y ${n0(g.crem[1].z)} de largo), 2 correas`;
   t += `
-*Lona:* ≈ ${n0(Math.ceil(g.total / 100))} m de rollo de 2 m`;
+*Lona:* ≈ ${n0(Math.ceil(g.total / 100))} m de rollo de ${n0(GL.ROLLO)} de ancho`;
   return t;
 }
 function glIr(j) { GL.paso = j; pintarGlamping(); window.scrollTo(0, 0); }
