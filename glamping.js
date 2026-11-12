@@ -6,7 +6,7 @@
 // 12-nov: largo total 390 = escalera de madera 80 + carpa 250 (de la puerta a la pared de atrás) + cubo 60.
 const GL = {
   ROLLO: 200, SELLE: 3,   // 12-nov: selle de 3 cm, 1,5 en cada borde que se une
-  DOB: 5, FONDO: 330, VUELO: 80,
+  DOB: 3, FONDO: 330, VUELO: 80,
   PERFIL: [[0, 0], [125, 300], [265, 250], [300, 0]],   // suelo izq · pico · esquina pequeña · suelo der
   CUBO: { w: 300, h: 250, d: 60 },
   CREM: [100, 200],                                       // cremalleras: a 100 y 200 cm de la esquina izquierda
@@ -243,7 +243,7 @@ function glCara(g, o = {}) {
     s += `<polygon class="ap" style="--d:.7s" points="${glPts(glRecorte(P, zj, 400), X, Y)}" fill="#d5dbef" stroke="${GL_COL.piezaB}" stroke-width="2.5"/>`;
     s += glAp(1.2, `<line x1="${X(a) - 14}" y1="${Y(zj)}" x2="${X(b) + 14}" y2="${Y(zj)}" stroke="${GL_COL.rojo}" stroke-width="3" stroke-dasharray="8 5"/>` + glT(X(b) + 18, Y(zj) + 6, `unión a ${n0(zj)}`, { ta: 'start', col: GL_COL.rojo, fs: 18 }));
     s += glAp(1.6, glT(X(150), Y(zj / 2), 'abajo', { fs: 26 }) + glT(X(160), Y(zj + 45), 'arriba', { fs: 22 }));
-    if (o.partes === 2) s += glAp(2, glT(X(150), Y(0) + 34, '+ 5 de dobladillo abajo', { fs: 18, col: GL_COL.rojo }) + glT(X(30), Y(200), `+ ${n1(GL.SELLE / 2)}`, { fs: 18, col: GL_COL.rojo, ta: 'end' }) + glT(X(292), Y(150), `+ ${n1(GL.SELLE / 2)}`, { fs: 18, col: GL_COL.rojo, ta: 'start' }));
+    if (o.partes === 2) s += glAp(2, glT(X(150), Y(0) + 34, `+ ${GL.DOB} de dobladillo con varilla`, { fs: 18, col: GL_COL.rojo }) + glT(X(30), Y(200), `+ ${n1(GL.SELLE / 2)}`, { fs: 18, col: GL_COL.rojo, ta: 'end' }) + glT(X(292), Y(150), `+ ${n1(GL.SELLE / 2)}`, { fs: 18, col: GL_COL.rojo, ta: 'start' }));
   }
   if (o.crem) g.crem.forEach((c, i) => {
     s += `<line class="${o.crem === 1 ? 'dib' : ''}" pathLength="1" style="--d:${.3 + i * .8}s" x1="${X(c.x)}" y1="${Y(0)}" x2="${X(c.x)}" y2="${Y(c.z)}" stroke="#14181b" stroke-width="4"/>`;
@@ -396,7 +396,7 @@ function glPerfilTecho(g, u) {
   if (u >= 1) {
     const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
     [[0, -38, 0], [1, 0, -22], [2, 42, 0]].forEach(([i, dx, dz]) => { const c = mid(P[i], P[i + 1]); s += glT(X(c[0]) + dx, Y(c[1]) + dz, n0(g.lados[i]), { fs: 24, col: GL_COL.rojo }); });
-    s += glT(X(150), Y(0) + 34, `de suelo a suelo: ${n0(g.suelo)} + 5 + 5 = ${n0(g.techo.largo)}`, { fs: 19 });
+    s += glT(X(150), Y(0) + 34, `de suelo a suelo: ${n0(g.suelo)} + ${GL.DOB} + ${GL.DOB} = ${n0(g.techo.largo)}`, { fs: 19 });
   }
   return s + '</svg>';
 }
@@ -431,7 +431,7 @@ const GL_ESC = {
     return { titulo: 'Frente', cuadros: [
       { t: `El frente es más alto que el rollo: va en <b>2 piezas</b>, ${glN(ab)} abajo y ${glN(ar)} arriba.`, svg: () => glCara(g, { partes: 1 }) },
       glFichaCu(g, 'fAb'), glFichaCu(g, 'fAr'),
-      { t: `Sella ${glN(ab)} con ${glN(ar)}. Abajo lleva <b>${GL.DOB}</b> de dobladillo.`, svg: () => glCara(g, { partes: 2 }) },
+      { t: `Sella ${glN(ab)} con ${glN(ar)}. Abajo lleva <b>${GL.DOB}</b> de dobladillo con varilla.`, svg: () => glCara(g, { partes: 2 }) },
     ] };
   },
   puerta: g => ({ titulo: 'Puerta', cuadros: [
@@ -522,7 +522,7 @@ Medidas de CORTE, ya con selle y dobladillo:
   g.piezas.forEach(p => {
     const c = p.corte, bordes = c.map((a, i) => Math.hypot(c[(i + 1) % c.length][0] - a[0], c[(i + 1) % c.length][1] - a[1])).filter(L => L >= 8).map(n1);
     t += `
-*${p.n}. ${p.nombre}*${p.cant > 1 ? ` (×${p.cant})` : ''}, fila ${p.fila}: ${p.real.length === 4 && p.id !== 'fAb' ? `${n1(p.w)} × ${n1(p.h)}` : `bordes ${bordes.join(' · ')}, alto ${n1(p.h)}`}`;
+*${p.n}. ${p.nombre}*${p.cant > 1 ? ` (×${p.cant})` : ''}, fila ${p.fila}: ${p.real.length === 4 && p.real.every(([x, y]) => (x === p.real[0][0] || x === p.real[2][0]) && (y === p.real[0][1] || y === p.real[2][1])) ? `${n1(p.w)} × ${n1(p.h)}` : `bordes ${bordes.join(' · ')}, alto ${n1(p.h)}`}`;
   });
   t += `
 
