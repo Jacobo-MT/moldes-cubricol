@@ -333,7 +333,7 @@ function ir(v) {
   $$('.vista[id^="v-"]').forEach(s => { s.hidden = s.id !== 'v-' + v; });
   $$('#tabs button').forEach(b => { if (b.dataset.v === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   $('#tabs').hidden = v === 'cochera' || v === 'glamping';
-  $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,10' : `Plegable ${tam()}`;
+  $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : `Plegable ${tam()}`;
   if (v === 'ajustes') pintarAjustes();
   if (v === 'cochera') pintarCochera(); else if (typeof coParar === 'function') coParar();
   if (v === 'glamping') pintarGlamping(); else if (typeof glParar === 'function') glParar();
