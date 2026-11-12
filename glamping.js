@@ -502,6 +502,10 @@ function pintarGlamping() {
         <button class="co-b" id="glPlay" aria-label="Reproducir o pausar"></button>
         <button class="co-b" id="glProx" aria-label="Cuadro siguiente">▶</button>
       </div>
+    </div>
+    <div class="gl-leyenda">
+      ${[['techo', 'Techo'], ['frente', 'Frente'], ['cubo', 'Cubo'], ['vent', 'Ventana'], ['tira', 'Tiras']].map(([k, t]) => `<span><i style="background:${GL_GRUPO[k]}"></i>${t}</span>`).join('')}
+      <span class="gl-sel"><i></i>se sella: <b>1,5</b> de cada pieza (3 en total)</span>
     </div>${esc.abajo || ''}`;
   $('#glAtras').hidden = i === 0;
   $('#glSig').hidden = i === GL_PASOS.length - 1;
