@@ -239,3 +239,4 @@ svg .cae { animation: coCae 1.4s cubic-bezier(.3,.7,.4,1) both; }
 .tabs button[aria-current=page] { color: var(--rojo); background: var(--rojo-suave); }
 
 @media (prefers-reduced-motion: reduce) { .pin-puntos.mal { animation: none; } }
+.gl-n { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; padding: 0 .2em; border-radius: 999px; border: 2px solid var(--tinta); color: var(--tinta); font: 800 .85em/1 var(--f-num); vertical-align: .1em; }
