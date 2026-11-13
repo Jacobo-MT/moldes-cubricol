@@ -1,5 +1,5 @@
 // Primero la red (para que siempre llegue la versión nueva); si no hay señal, lo guardado.
-const CACHE = 'moldes-v16';
+const CACHE = 'moldes-v17';
 const BASE = ['./', 'index.html', 'app.css', 'app.js', 'cochera.js', 'glamping.js', 'manifest.webmanifest', 'icons/logo-claro.png', 'icons/icon-192.png'];
 
 self.addEventListener('install', e => {
@@ -10,8 +10,10 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  const mio = new URL(e.request.url).origin === location.origin;
+  // los archivos de la app se piden siempre frescos (sin la copia del navegador)
   e.respondWith(
-    fetch(e.request)
+    (mio ? fetch(e.request.url, { cache: 'no-store' }) : fetch(e.request))
       .then(res => {
         if (res.ok || res.type === 'opaque') { const copia = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copia)); }
         return res;
