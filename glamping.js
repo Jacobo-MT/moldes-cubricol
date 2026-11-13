@@ -411,55 +411,95 @@ function glPerfilTecho(g, u) {
   return s + '</svg>';
 }
 
-// =================== borde al suelo: atornillar y soltar ===================
-// Dos vistas: a la izquierda el corte de lado (se ve el tornillo entrar al tubo), a la derecha de frente.
-// modo 'fija': se ponen los tornillos. modo 'suelta': se sacan y la lona sale hacia arriba.
-function glTornillos(u, modo) {
-  const W = 640, H = 450, yS = 370, yT = 306, yD = yS - 50, ease = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
-  const xs = [330, 400, 470, 540, 600 - 10], yt = yS - 25;
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${modo === 'fija' ? 'Atornillar el borde al suelo' : 'Soltar la lona para lavarla'}">${FL}`;
-  s += `<rect x="0" y="${yS}" width="${W}" height="${H - yS}" fill="#c9a77c"/>`;
-  for (let i = 0; i < 4; i++) s += `<line x1="0" y1="${yS + 18 + i * 18}" x2="${W}" y2="${yS + 18 + i * 18}" stroke="#a9875c" stroke-width="2"/>`;
-  s += `<line x1="262" y1="70" x2="262" y2="${H}" stroke="#b9c1de" stroke-width="2" stroke-dasharray="6 6"/>`;
-  s += glT(130, 104, 'de lado (cortado)', { fs: 19, col: '#4a545b' }) + glT(455, 104, 'de frente', { fs: 19, col: '#4a545b' });
-  // cuánto sube la lona y cómo van los tornillos
-  const sube = modo === 'suelta' ? ease((u - 0.5) / 0.42) * 230 : 0;
-  const nPuestos = modo === 'fija' ? Math.max(0, Math.min(xs.length, Math.floor((u - 0.25) / 0.7 * xs.length + 1))) : 0;
-  // ---------- corte de lado ----------
-  s += `<rect x="150" y="${yT}" width="64" height="${yS - yT}" fill="#5b666e" stroke="#2b3238" stroke-width="2.5"/><rect x="160" y="${yT + 10}" width="44" height="${yS - yT - 20}" fill="#eef1fb" stroke="#2b3238" stroke-width="1.5"/>`;
-  s += `<rect x="168" y="110" width="28" height="${yT - 110}" fill="#5b666e" stroke="#2b3238" stroke-width="2"/>`;
-  // lona: baja pegada al tubo y abajo se dobla 5 cm (dobladillo)
-  const L = `<path d="M150 110 V${yS - 2} H140 V${yD}" fill="none" stroke="#5462b4" stroke-width="6" stroke-linejoin="round"/>`;
-  s += `<g transform="translate(0 ${-sube})">${L}</g>`;
-  // el tornillo del corte
-  let tx;        // punta del tornillo
-  if (modo === 'fija') tx = 140 + ease((u - 0.12) / 0.3) * 48; else tx = 188 - ease(u / 0.3) * 48;
-  const tOp = modo === 'suelta' ? 1 - ease((u - 0.3) / 0.12) : 1;
-  s += `<g opacity="${tOp}"><rect x="${tx - 48}" y="${yt - 3}" width="48" height="6" fill="#9aa3aa"/><path d="M${tx} ${yt}l-10 -3v6z" fill="#9aa3aa"/><rect x="${tx - 54}" y="${yt - 11}" width="7" height="22" rx="2" fill="#c4cad0" stroke="#2b3238" stroke-width="1.5"/></g>`;
-  // el taladro, de perfil
-  const tal = modo === 'fija' ? (u < 0.46 ? 1 : 1 - ease((u - 0.46) / 0.1)) : (u < 0.32 ? 1 : 1 - ease((u - 0.32) / 0.1));
-  if (tal > 0.01) {
-    const hx = tx - 54, gira = Math.floor(u * 60) % 2;
-    s += `<g opacity="${tal}" transform="translate(${hx} ${yt}) scale(.7)"><rect x="-26" y="-3" width="26" height="6" fill="#6b757c"/><rect x="-108" y="-24" width="84" height="44" rx="10" fill="#e8b21a" stroke="#14181b" stroke-width="2.5"/><rect x="-92" y="18" width="28" height="56" rx="8" fill="#e8b21a" stroke="#14181b" stroke-width="2.5"/>${gira ? '<path d="M-20 -14a14 14 0 0 1 0 28" fill="none" stroke="#14181b" stroke-width="2"/>' : ''}</g>`;
+// =================== borde al suelo: la franja de 5 cm acostada en el piso, con tornillos ===================
+// Bordes que tocan el suelo, con hacia dónde sale la franja (para afuera). La puerta no lleva.
+function glBordesSuelo() {
+  const F = GL.FONDO, W = GL.VUELO, y1 = F + GL.CUBO.d, [c1, c2] = GL.CREM;
+  return [
+    [[0, 0], [0, y1], [-1, 0]], [[300, 0], [300, y1], [1, 0]],
+    [[0, W], [c1, W], [0, -1]], [[c2, W], [300, W], [0, -1]],
+    [[0, y1], [300, y1], [0, 1]],
+  ];
+}
+// El glamping entero: franjas en el piso + tornillos. modo 'fija' los pone; 'suelta' los quita y la lona sale por arriba.
+function glSuelo3D(g, u, modo) {
+  const ease = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t), FW = 16, PASO = 45, SUBE = 260;   // la franja se dibuja un poco más ancha para que se vea
+  const a = 0.5 + (modo === 'fija' ? u * 0.35 : 0.85 - u * 0.25);
+  const sube = modo === 'suelta' ? ease((u - 0.42) / 0.5) * SUBE : 0;
+  const items = [];
+  // estructura (se queda): perfiles adelante, en la puerta y atrás, cumbreras y el cubo
+  const P = GL.PERFIL, F = GL.FONDO, W = GL.VUELO, C = GL.CUBO, y1 = F + C.d, est = '#39444b';
+  const tubo = (p, q, w = 5, col = est) => items.push({ linea: true, pts: [p, q], col, w });
+  for (let i = 0; i < P.length - 1; i++) {
+    tubo([P[i][0], 0, P[i][1]], [P[i + 1][0], 0, P[i + 1][1]], 8, GL_COL.madera);
+    [W, F].forEach(y => tubo([P[i][0], y, P[i][1]], [P[i + 1][0], y, P[i + 1][1]]));
   }
-  if (sube < 5) s += flecha(228, yD, 228, yS, GL_COL.rojo, 2) + glT(236, (yD + yS) / 2 + 8, '5', { fs: 20, col: GL_COL.rojo, ta: 'start' });
-  s += glT(182, yS + 30, 'tubo', { fs: 18 });
-  // ---------- de frente ----------
-  s += `<rect x="285" y="${yT}" width="345" height="${yS - yT}" fill="#5b666e" stroke="#2b3238" stroke-width="2"/>`;
-  s += `<rect x="440" y="110" width="28" height="${yT - 110}" fill="#5b666e" stroke="#2b3238" stroke-width="2"/>`;
-  let fr = `<rect x="300" y="110" width="315" height="${yS - 110}" fill="#eef1fb" stroke="#5462b4" stroke-width="2.5" opacity=".9"/>`;
-  fr += `<rect x="300" y="${yD}" width="315" height="50" fill="#dfe4f3" stroke="#5462b4" stroke-width="2"/><line x1="300" y1="${yD}" x2="615" y2="${yD}" stroke="${GL_COL.rojo}" stroke-width="2" stroke-dasharray="8 5"/>`;
-  if (modo === 'suelta') xs.forEach(x => { fr += `<circle cx="${x}" cy="${yt}" r="3" fill="#7d868d"/>`; });
-  s += `<g transform="translate(0 ${-sube})">${fr}</g>`;
-  const cab = (x, k = 1, o = 1) => `<g transform="translate(${x} ${yt}) scale(${k})" opacity="${o}"><circle r="10" fill="#c4cad0" stroke="#2b3238" stroke-width="2"/><path d="M-5 0H5M0 -5V5" stroke="#2b3238" stroke-width="2.4"/></g>`;
-  xs.forEach((x, i) => {
-    if (modo === 'fija') { if (i < nPuestos) s += cab(x); }
-    else { const t = ease((u - i * 0.07) / 0.12); if (t < 1) s += cab(x, 1 + t * 0.7, 1 - t); }
+  P.forEach(([x, z]) => tubo([x, 0, z], [x, F, z], 4));
+  [[0, y1], [300, y1], [0, F], [300, F]].forEach(([x, y]) => tubo([x, y, 0], [x, y, C.h], 4));
+  tubo([0, y1, C.h], [300, y1, C.h], 4); tubo([0, F, C.h], [0, y1, C.h], 4); tubo([300, F, C.h], [300, y1, C.h], 4);
+  // la lona (sube entera al soltarla)
+  glModelo(g).forEach(c => items.push({ ...c, pts: c.pts.map(([x, y, z]) => [x, y, z + sube]), lona: true }));
+  // las franjas de 5 cm en el piso
+  const tornillos = [];
+  glBordesSuelo().forEach(([p, q, n]) => {
+    const A = [p[0] + n[0] * FW, p[1] + n[1] * FW], B = [q[0] + n[0] * FW, q[1] + n[1] * FW];
+    items.push({ pts: [[p[0], p[1], 0.5 + sube], [q[0], q[1], 0.5 + sube], [B[0], B[1], 0.5 + sube], [A[0], A[1], 0.5 + sube]], col: '#f6d0d2', borde: GL_COL.rojo, lona: true, plano: true, n });
+    const L = Math.hypot(q[0] - p[0], q[1] - p[1]), n0 = Math.max(1, Math.round(L / PASO));
+    for (let k = 0; k < n0; k++) { const t = (k + 0.5) / n0; tornillos.push([p[0] + (q[0] - p[0]) * t + n[0] * FW / 2, p[1] + (q[1] - p[1]) * t + n[1] * FW / 2, n]); }
   });
-  // títulos
-  if (modo === 'fija') s += glT(W / 2, 36, `El borde de abajo trae <tspan fill="${GL_COL.rojo}">5 cm</tspan> doblados`, { fs: 26 }) + (u > 0.9 ? glT(W / 2, 66, 'tornillos autoperforantes al tubo', { fs: 22, col: GL_COL.rojo }) : '');
-  else s += glT(W / 2, 36, u < 0.48 ? 'Para lavar: saca los tornillos' : 'La lona sale sola', { fs: 26 }) + (u > 0.75 ? glT(W / 2, 66, 'la estructura se queda armada', { fs: 22, col: '#4a545b' }) : '');
-  if (modo === 'suelta' && u > 0.55) s += flecha(624, 260, 624, 150, GL_COL.rojo, 3);
+  const NT = tornillos.length;
+  tornillos.forEach(([x, y, n], i) => {
+    const vis = modo === 'fija' ? ease((u * 1.15 - i / NT * 0.85) / 0.05) : 1 - ease((u * 1.1 - i / NT * 0.38) / 0.05);
+    if (vis > 0.02) items.push({ punto: true, pts: [[x, y, 1]], o: vis, n });
+  });
+  // proyección y orden (de atrás hacia adelante)
+  const pr = items.map(c => { const pp = c.pts.map(p => glProy(p, a)); return { ...c, pp, z: pp.reduce((s, p) => s + p[2], 0) / pp.length + (c.linea ? 2 : 0) + (c.plano || c.punto ? (c.n[0] * Math.sin(a) - c.n[1] * Math.cos(a) > 0.05 && !sube ? 1e6 + (c.punto ? 1 : 0) : -1e6) : 0) }; });
+  pr.sort((A, B) => A.z - B.z);
+  // caja fija para que no salte el dibujo mientras sube la lona
+  const AL = 300 + (modo === 'suelta' ? SUBE : 0), caja = [[-30, -30, 0], [330, -30, 0], [330, 420, 0], [-30, 420, 0], [0, 0, AL], [300, 400, AL], [0, 400, AL], [300, 0, AL]].map(p => glProy(p, a));
+  const x0 = Math.min(...caja.map(p => p[0])) - 20, x1 = Math.max(...caja.map(p => p[0])) + 20, yy0 = Math.min(...caja.map(p => p[1])) - 50, yy1 = Math.max(...caja.map(p => p[1])) + 20;
+  let s = `<svg viewBox="${x0.toFixed(0)} ${yy0.toFixed(0)} ${(x1 - x0).toFixed(0)} ${(yy1 - yy0).toFixed(0)}" role="img" aria-label="${modo === 'fija' ? 'Franjas de 5 cm atornilladas al piso' : 'La lona sale entera por arriba'}">${FL}`;
+  // piso de madera (la plataforma)
+  const piso = [[-60, -60, 0], [360, -60, 0], [360, 460, 0], [-60, 460, 0]].map(p => glProy(p, a));
+  s += `<polygon points="${piso.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="#d9c3a5" stroke="#b08d64"/>`;
+  for (let k = 1; k < 13; k++) { const yk = -60 + k * 40, A = glProy([-60, yk, 0], a), B = glProy([360, yk, 0], a); s += `<line x1="${A[0].toFixed(1)}" y1="${A[1].toFixed(1)}" x2="${B[0].toFixed(1)}" y2="${B[1].toFixed(1)}" stroke="#c4a882" stroke-width="1.5"/>`; }
+  const opL = sube > 0 ? 0.92 : 1;
+  pr.forEach(c => {
+    if (c.linea) { s += `<line x1="${c.pp[0][0].toFixed(1)}" y1="${c.pp[0][1].toFixed(1)}" x2="${c.pp[1][0].toFixed(1)}" y2="${c.pp[1][1].toFixed(1)}" stroke="${c.col}" stroke-width="${c.w}" stroke-linecap="round"/>`; return; }
+    if (c.punto) { const [x, y] = c.pp[0]; s += `<g opacity="${c.o.toFixed(2)}"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="#c4cad0" stroke="#14181b" stroke-width="2"/></g>`; return; }
+    s += `<polygon points="${c.pp.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="${c.col}" stroke="${c.borde || '#2b3238'}" stroke-width="${c.borde ? 2 : 1.6}" stroke-linejoin="round" opacity="${c.lona && !c.plano ? opL : 1}"/>`;
+  });
+  if (modo === 'suelta' && u > 0.45) { const A = glProy([150, 200, 330 + sube * 0.4], a), B = glProy([150, 200, 330 + sube * 0.4 + 90], a); s += flecha(A[0] + 200, A[1], B[0] + 200, B[1], GL_COL.rojo, 5); }
+  return s + '</svg>';
+}
+
+// De cerca y cortado: la lona baja por fuera del tubo y la franja de 5 cm se acuesta en el piso; el tornillo baja al piso.
+function glTornillos(u, modo) {
+  const W = 640, H = 440, yS = 330, xT = 330, ease = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+  const xL = xT - 4, xF = xL - 50, xt = xL - 25;           // lona, punta de la franja (5 cm = 50 px), tornillo
+  const sube = modo === 'suelta' ? ease((u - 0.45) / 0.45) * 230 : 0;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="La franja de 5 cm atornillada al piso">${FL}`;
+  s += `<rect x="0" y="${yS}" width="${W}" height="${H - yS}" fill="#c9a77c"/>`;
+  for (let i = 0; i < 5; i++) s += `<line x1="0" y1="${yS + 22 + i * 20}" x2="${W}" y2="${yS + 22 + i * 20}" stroke="#a9875c" stroke-width="2"/>`;
+  s += `<rect x="${xT}" y="${yS - 60}" width="60" height="60" fill="#5b666e" stroke="#2b3238" stroke-width="2.5"/><rect x="${xT + 10}" y="${yS - 50}" width="40" height="40" fill="#c9a77c" stroke="#2b3238" stroke-width="1.5"/>`;
+  s += `<rect x="${xT + 16}" y="70" width="28" height="${yS - 130}" fill="#5b666e" stroke="#2b3238" stroke-width="2"/>`;
+  s += `<g transform="translate(0 ${-sube})"><path d="M${xL} 70 V${yS - 3} H${xF}" fill="none" stroke="#5462b4" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g>`;
+  // tornillo: baja (fija) o sube y se va (suelta)
+  const L = 46;
+  let tip = modo === 'fija' ? yS - 10 + ease((u - 0.15) / 0.4) * (L - 2) : yS + L - 12 - ease(u / 0.3) * (L - 2);
+  const tOp = modo === 'suelta' ? 1 - ease((u - 0.3) / 0.1) : 1;
+  s += `<g opacity="${tOp}"><rect x="${xt - 3}" y="${tip - L}" width="6" height="${L}" fill="#9aa3aa"/><path d="M${xt - 3} ${tip - 8}L${xt} ${tip}L${xt + 3} ${tip - 8}Z" fill="#9aa3aa"/><rect x="${xt - 11}" y="${tip - L - 7}" width="22" height="7" rx="2" fill="#c4cad0" stroke="#2b3238" stroke-width="1.5"/></g>`;
+  // taladro vertical, encima del tornillo
+  const tal = modo === 'fija' ? (u < 0.58 ? 1 : 1 - ease((u - 0.58) / 0.1)) : (u < 0.32 ? 1 : 1 - ease((u - 0.32) / 0.1));
+  if (tal > 0.01) {
+    const hy = tip - L - 7 - (modo === 'fija' && u > 0.58 ? ease((u - 0.58) / 0.1) * 60 : 0), gira = Math.floor(u * 60) % 2;
+    s += `<g opacity="${tal}" transform="translate(${xt} ${hy})"><rect x="-3" y="-22" width="6" height="22" fill="#6b757c"/><rect x="-22" y="-100" width="44" height="80" rx="10" fill="#e8b21a" stroke="#14181b" stroke-width="2.5"/><rect x="18" y="-86" width="58" height="26" rx="8" fill="#e8b21a" stroke="#14181b" stroke-width="2.5"/>${gira ? '<path d="M-14 -10a14 6 0 0 0 28 0" fill="none" stroke="#14181b" stroke-width="2"/>' : ''}</g>`;
+  }
+  // medidas y nombres
+  if (sube < 5) s += flecha(xF, yS - 26, xL, yS - 26, GL_COL.rojo, 2) + glT((xF + xL) / 2 - 40, yS - 34, '5 cm', { fs: 22, col: GL_COL.rojo, ta: 'end' });
+  s += glT(xL - 14, 110, 'lona', { fs: 20, col: '#5462b4', ta: 'end' }) + glT(xT + 70, yS - 30, 'tubo de la estructura', { fs: 18, ta: 'start' }) + glT(560, yS + 60, 'piso', { fs: 20 });
+  if (modo === 'fija') s += glT(W / 2, 36, `La franja de <tspan fill="${GL_COL.rojo}">5 cm</tspan> se acuesta en el piso`, { fs: 26 }) + (u > 0.75 ? glT(W / 2, 66, 'y se atornilla al piso con autoperforantes', { fs: 22, col: GL_COL.rojo }) : '');
+  else s += glT(W / 2, 36, u < 0.45 ? 'Se saca el tornillo' : 'La lona sube y sale', { fs: 26 }) + (u > 0.75 ? glT(W / 2, 66, 'el tubo se queda en su sitio', { fs: 22, col: '#4a545b' }) : '');
   return s + '</svg>';
 }
 
@@ -523,9 +563,11 @@ const GL_ESC = {
     ] };
   },
   suelo: g => ({ titulo: 'Al suelo', cuadros: [
-    { t: `Todo borde que <b>toca el suelo</b> (en rojo) lleva <b>${GL.SUELO} cm</b> de más. La <b>puerta</b> no: esa se abre.`, svg: () => gl3D(g, 0.6, { suelo: true }) },
-    { t: `Al armar: ese borde de <b>${GL.SUELO} cm</b> se fija al tubo con <b>tornillos autoperforantes</b>.`, anim: { dur: 6500, f: u => glTornillos(u, 'fija') } },
-    { t: `Para lavarla: se sacan los tornillos y la lona <b>sale sola</b>. La estructura no se toca.`, anim: { dur: 6500, f: u => glTornillos(u, 'suelta') } },
+    { t: `Donde la lona toca el piso lleva una <b>franja de ${GL.SUELO} cm</b> acostada (rojo). La <b>puerta</b> no.`, svg: () => glSuelo3D(g, 1, 'fija') },
+    { t: `Al armar: cada franja se <b>atornilla al piso</b> con autoperforantes.`, anim: { dur: 7000, f: u => glSuelo3D(g, u, 'fija') } },
+    { t: `De cerca: la lona baja por fuera del tubo y los <b>${GL.SUELO} cm</b> quedan en el piso.`, anim: { dur: 5000, f: u => glTornillos(u, 'fija') } },
+    { t: `Para lavarla: se quitan los tornillos y la lona <b>sale entera por arriba</b>.`, anim: { dur: 7000, f: u => glSuelo3D(g, u, 'suelta') } },
+    { t: `La estructura <b>no se desarma</b>: solo se levanta la lona.`, anim: { dur: 5000, f: u => glTornillos(u, 'suelta') } },
   ] }),
   final: g => ({ titulo: 'Listo', cuadros: [
     { t: `Así queda armado. Compra <b>${n0(Math.ceil(g.total / 100))} m</b> de lona y <b>2 cremalleras</b> de <b>${n0(Math.ceil((g.crem[0].z + 10) / 10) * 10)}</b> y <b>${n0(Math.ceil((g.crem[1].z + 10) / 10) * 10)}</b>.`, anim: { dur: 6000, f: u => gl3D(g, 0.6 - u * 6.28) } },
