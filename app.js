@@ -436,12 +436,12 @@ function ico3D(tipo) {
       [p(x0, y1, z0), p(x0, y0, z0), p(x0, y0, z1), p(x0, y1, z1)]);
   };
   if (tipo === 'plegable' || tipo === 'fija') {
-    const L = 100, zG = 70, zT = 82, ap = [50, 50, 128], curva = tipo === 'plegable' ? 10 : 0, esq = [[0, 0], [L, 0], [L, L], [0, L]];
+    const L = 100, zG = 70, zT = 82, ap = [50, 50, 128], curva = tipo === 'plegable' ? 24 : 0, esq = [[0, 0], [L, 0], [L, L], [0, L]];
     [[0, 0], [L - 3, 0], [L - 3, L - 3], [0, L - 3]].forEach(([x, y]) => caja(x, y, 0, x + 3, y + 3, zG));
     for (let i = 0; i < 4; i++) {
       const [a, b] = [esq[i], esq[(i + 1) % 4]];
       F.push([[a[0], a[1], zG], [b[0], b[1], zG], [b[0], b[1], zT], [a[0], a[1], zT]]);          // gola
-      const N = 6, M = 4, pt = (s, t) => { const ex = a[0] + (b[0] - a[0]) * s, ey = a[1] + (b[1] - a[1]) * s; return [ex + (ap[0] - ex) * t, ey + (ap[1] - ey) * t, zT + (ap[2] - zT) * t - curva * Math.sin(Math.PI * t) * Math.sin(Math.PI * s) ** 0.3]; };
+      const N = 6, M = 4, pt = (s, t) => { const ex = a[0] + (b[0] - a[0]) * s, ey = a[1] + (b[1] - a[1]) * s; return [ex + (ap[0] - ex) * t, ey + (ap[1] - ey) * t, zT + (ap[2] - zT) * t - curva * Math.sin(Math.PI * t) * (0.75 + 0.25 * Math.sin(Math.PI * s))]; };   // techo cóncavo, también en las aristas
       for (let s = 0; s < N; s++) for (let t = 0; t < M; t++) F.push([pt(s / N, t / M), pt((s + 1) / N, t / M), pt((s + 1) / N, (t + 1) / M), pt(s / N, (t + 1) / M)]);
     }
   } else if (tipo === 'cochera') {
@@ -452,7 +452,7 @@ function ico3D(tipo) {
       F.push([p(x0, a0), p(x1, a0), p(x1, a1), p(x0, a1)]);
     }
     const cara = x => Array.from({ length: NA + 1 }, (_, j) => [x, R - R * Math.cos(Math.PI * j / NA), R * Math.sin(Math.PI * j / NA)]);
-    F.push(cara(Lx).reverse());
+    F.push(cara(Lx).reverse(), cara(0));          // cerrada en los dos lados
   } else {   // glamping: el perfil de 4 esquinas estirado, más el cubo de atrás
     const P = [[0, 0], [42, 100], [88, 83], [100, 0]], Y = 110;
     for (let i = 0; i < 3; i++) F.push([[P[i][0], 0, P[i][1]], [P[i + 1][0], 0, P[i + 1][1]], [P[i + 1][0], Y, P[i + 1][1]], [P[i][0], Y, P[i][1]]]);
