@@ -445,14 +445,13 @@ function ico3D(tipo) {
       for (let s = 0; s < N; s++) for (let t = 0; t < M; t++) F.push([pt(s / N, t / M), pt((s + 1) / N, t / M), pt((s + 1) / N, (t + 1) / M), pt(s / N, (t + 1) / M)]);
     }
   } else if (tipo === 'cochera') {
-    const R = 62, Lx = 150, NA = 12, gajos = [0, 50, 100, 150];
-    for (let k = 0; k < gajos.length - 1; k++) for (let j = 0; j < NA; j++) {
-      const a0 = Math.PI * j / NA, a1 = Math.PI * (j + 1) / NA, x0 = gajos[k] + (k ? 2 : 0), x1 = gajos[k + 1];
-      const p = (x, a) => [x, R - R * Math.cos(a), R * Math.sin(a)];
-      F.push([p(x0, a0), p(x1, a0), p(x1, a1), p(x0, a1)]);
+    // concha cerrada: arcos que giran en la bisagra de cada lado; los de las puntas bajan hasta el piso
+    const Rx = 78, Rz = 62, Wy = 50, NA = 8, NF = 14;
+    const pt = (th, ph) => { const r = Math.sin(ph); return [Rx * r * Math.cos(th) + Rx, Wy - Wy * Math.cos(ph), Rz * r * Math.sin(th)]; };
+    for (let k = 0; k < NA; k++) for (let j = 0; j < NF; j++) {
+      const t0 = Math.PI * k / NA, t1 = Math.PI * (k + 1) / NA, p0 = Math.PI * j / NF, p1 = Math.PI * (j + 1) / NF;
+      F.push([pt(t0, p0), pt(t1, p0), pt(t1, p1), pt(t0, p1)]);
     }
-    const cara = x => Array.from({ length: NA + 1 }, (_, j) => [x, R - R * Math.cos(Math.PI * j / NA), R * Math.sin(Math.PI * j / NA)]);
-    F.push(cara(Lx).reverse(), cara(0));          // cerrada en los dos lados
   } else {   // glamping: el perfil de 4 esquinas estirado, más el cubo de atrás
     const P = [[0, 0], [42, 100], [88, 83], [100, 0]], Y = 110;
     for (let i = 0; i < 3; i++) F.push([[P[i][0], 0, P[i][1]], [P[i + 1][0], 0, P[i + 1][1]], [P[i + 1][0], Y, P[i + 1][1]], [P[i][0], Y, P[i][1]]]);
