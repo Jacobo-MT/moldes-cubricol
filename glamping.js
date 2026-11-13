@@ -13,7 +13,7 @@ const GL = {
   CUBO: { w: 300, h: 250, d: 60 },
   CREM: [100, 200],                                       // cremalleras: a 100 y 200 cm de la esquina izquierda
   VENT: { lado: 100, ancho: 120, sale: 50, zt: 260, yc: 205 },   // centrada en los 250 de la carpa          // techito PLANO, sin punta
-  f: 0, juega: true, timer: 0, raf: 0, paso: leerLS('glamping', 0), esc: null,
+  f: 0, juega: false, timer: 0, raf: 0, paso: leerLS('glamping', 0), esc: null,
 };
 const GL_COL = { lona: '#eef1fb', lona2: '#dfe4f3', borde: '#5462b4', pieza: '#c4cdec', piezaB: '#5462b4', rojo: '#d9232a', madera: '#b07a45', oscuro: '#39444b', cota: '#14181b', sobra: '#f6d0d2' };
 
@@ -624,7 +624,7 @@ function pintarGlamping() {
   $('#glSig').textContent = `Siguiente: ${GL_PASOS[i + 1] ? GL_PASOS[i + 1][1] : ''} →`;
   const chip = $('#glPasos [aria-current]'); if (chip) chip.scrollIntoView({ block: 'nearest', inline: 'center' });
   guardarLS('glamping', i);
-  GL.juega = true;
+  GL.juega = false;   // el play arranca solo si lo tocan
   glCuadro(0);
 }
 function glTexto(g) {

@@ -425,3 +425,63 @@ function abrir() { $('#pin').hidden = true; $('#app').hidden = false; pintar(); 
 if (leerLS('ok', false)) abrir(); else $('#pin').hidden = false;
 
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+
+// =================== íconos 3D de la portada: blancos, con luz y sombra ===================
+function ico3D(tipo) {
+  const F = [];                                   // caras: listas de puntos [x, y, z]
+  const caja = (x0, y0, z0, x1, y1, z1) => {
+    const p = (x, y, z) => [x, y, z];
+    F.push([p(x0, y0, z1), p(x1, y0, z1), p(x1, y1, z1), p(x0, y1, z1)], [p(x0, y0, z0), p(x1, y0, z0), p(x1, y0, z1), p(x0, y0, z1)],
+      [p(x1, y0, z0), p(x1, y1, z0), p(x1, y1, z1), p(x1, y0, z1)], [p(x1, y1, z0), p(x0, y1, z0), p(x0, y1, z1), p(x1, y1, z1)],
+      [p(x0, y1, z0), p(x0, y0, z0), p(x0, y0, z1), p(x0, y1, z1)]);
+  };
+  if (tipo === 'plegable' || tipo === 'fija') {
+    const L = 100, zG = 70, zT = 82, ap = [50, 50, 128], curva = tipo === 'plegable' ? 10 : 0, esq = [[0, 0], [L, 0], [L, L], [0, L]];
+    [[0, 0], [L - 3, 0], [L - 3, L - 3], [0, L - 3]].forEach(([x, y]) => caja(x, y, 0, x + 3, y + 3, zG));
+    for (let i = 0; i < 4; i++) {
+      const [a, b] = [esq[i], esq[(i + 1) % 4]];
+      F.push([[a[0], a[1], zG], [b[0], b[1], zG], [b[0], b[1], zT], [a[0], a[1], zT]]);          // gola
+      const N = 6, M = 4, pt = (s, t) => { const ex = a[0] + (b[0] - a[0]) * s, ey = a[1] + (b[1] - a[1]) * s; return [ex + (ap[0] - ex) * t, ey + (ap[1] - ey) * t, zT + (ap[2] - zT) * t - curva * Math.sin(Math.PI * t) * Math.sin(Math.PI * s) ** 0.3]; };
+      for (let s = 0; s < N; s++) for (let t = 0; t < M; t++) F.push([pt(s / N, t / M), pt((s + 1) / N, t / M), pt((s + 1) / N, (t + 1) / M), pt(s / N, (t + 1) / M)]);
+    }
+  } else if (tipo === 'cochera') {
+    const R = 62, Lx = 150, NA = 12, gajos = [0, 50, 100, 150];
+    for (let k = 0; k < gajos.length - 1; k++) for (let j = 0; j < NA; j++) {
+      const a0 = Math.PI * j / NA, a1 = Math.PI * (j + 1) / NA, x0 = gajos[k] + (k ? 2 : 0), x1 = gajos[k + 1];
+      const p = (x, a) => [x, R - R * Math.cos(a), R * Math.sin(a)];
+      F.push([p(x0, a0), p(x1, a0), p(x1, a1), p(x0, a1)]);
+    }
+    const cara = x => Array.from({ length: NA + 1 }, (_, j) => [x, R - R * Math.cos(Math.PI * j / NA), R * Math.sin(Math.PI * j / NA)]);
+    F.push(cara(Lx).reverse());
+  } else {   // glamping: el perfil de 4 esquinas estirado, más el cubo de atrás
+    const P = [[0, 0], [42, 100], [88, 83], [100, 0]], Y = 110;
+    for (let i = 0; i < 3; i++) F.push([[P[i][0], 0, P[i][1]], [P[i + 1][0], 0, P[i + 1][1]], [P[i + 1][0], Y, P[i + 1][1]], [P[i][0], Y, P[i][1]]]);
+    F.push(P.map(([x, z]) => [x, Y, z]));          // frente (la puerta), hacia la cámara
+    caja(0, -22, 0, 100, 0, 83);                     // cubo de atrás
+  }
+  // cámara y luz
+  const a = 0.62, ca = Math.cos(a), sa = Math.sin(a);
+  const pr = ([x, y, z]) => [x * ca - y * sa, -z * 0.9 + (x * sa + y * ca) * 0.42, x * sa + y * ca + z * 0.3];
+  const C = [sa * 0.42, ca * 0.42, 0.9], Ln = [-0.45, 0.55, 0.7], nl = Math.hypot(...Ln), Lz = Ln.map(v => v / nl);
+  const sx = 0.55, sy = -0.35;                                         // hacia dónde cae la sombra en el piso
+  const sombra = ([x, y, z]) => pr([x + z * sx, y + z * sy, 0]);
+  const caras = F.map(f => {
+    const [p0, p1, p2] = [f[0], f[1], f[f.length > 3 ? 2 : 2]];
+    let n = [(p1[1] - p0[1]) * (p2[2] - p0[2]) - (p1[2] - p0[2]) * (p2[1] - p0[1]), (p1[2] - p0[2]) * (p2[0] - p0[0]) - (p1[0] - p0[0]) * (p2[2] - p0[2]), (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p1[1] - p0[1]) * (p2[0] - p0[0])];
+    const ln = Math.hypot(...n) || 1; n = n.map(v => v / ln);
+    if (n[0] * C[0] + n[1] * C[1] + n[2] * C[2] < 0) n = n.map(v => -v);
+    const luz = Math.max(0, n[0] * Lz[0] + n[1] * Lz[1] + n[2] * Lz[2]), v = Math.round(196 + 59 * luz);
+    const pp = f.map(pr);
+    return { pp, d: pp.reduce((s, p) => s + p[2], 0) / pp.length, col: `rgb(${v},${v},${Math.min(255, v + 3)})` };
+  }).sort((A, B) => A.d - B.d);
+  const todos = F.flat().flatMap(p => [pr(p), sombra(p)]), xs = todos.map(p => p[0]), ys = todos.map(p => p[1]);
+  const x0 = Math.min(...xs) - 6, y0 = Math.min(...ys) - 6, w = Math.max(...xs) - x0 + 6, h = Math.max(...ys) - y0 + 6;
+  const id = 'ib' + tipo;
+  let s = `<svg class="ico3d" viewBox="${x0.toFixed(0)} ${y0.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" aria-hidden="true"><defs><filter id="${id}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.2"/></filter></defs>`;
+  s += `<g filter="url(#${id})" opacity=".28">${F.map(f => `<polygon points="${f.map(sombra).map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="#14181b"/>`).join('')}</g>`;
+  caras.forEach(c => { s += `<polygon points="${c.pp.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="${c.col}" stroke="#b9c0c7" stroke-width=".6" stroke-linejoin="round"/>`; });
+  return s + '</svg>';
+}
+[['tipoPleg', 'plegable'], ['tipoFija', 'fija'], ['tipoCochera', 'cochera'], ['tipoGlamping', 'glamping']].forEach(([id, t]) => {
+  const b = document.getElementById(id), v = b && b.querySelector('svg'); if (v) v.outerHTML = ico3D(t);
+});

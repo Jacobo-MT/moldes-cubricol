@@ -5,7 +5,7 @@
 // para abrir, suben y se recogen parados uno sobre otro. Todos los arcos son iguales y todos los gajos salen de UN molde.
 //   R  = el menor entre el alto y la mitad del largo · hc = alto de la bisagra (faldón) · Lm = túnel fijo del medio
 
-const CO = { c: { L: 500, W: 250, H: 250, paso: 0, ...leerLS('cochera4', {}) }, g: null, f: 0, juega: true, timer: 0, raf: 0, abre: 0 };
+const CO = { c: { L: 500, W: 250, H: 250, paso: 0, ...leerLS('cochera4', {}) }, g: null, f: 0, juega: false, timer: 0, raf: 0, abre: 0 };
 const coGuardar = () => guardarLS('cochera4', { L: CO.c.L, W: CO.c.W, H: CO.c.H, paso: CO.c.paso });
 const CO_LIM = { L: [300, 900], W: [150, 400], H: [150, 350] };
 const CO_SOLAPE = 5, CO_FIJO = 100;
@@ -766,7 +766,7 @@ function pintarCochera() {
   $('#coSig').textContent = `Siguiente: ${ps[i + 1] ? ps[i + 1][1] : ''} →`;
   const chip = $('#coPasos [aria-current]'); if (chip) chip.scrollIntoView({ block: 'nearest', inline: 'center' });
   coGuardar();
-  CO.juega = true;
+  CO.juega = false;   // el play arranca solo si lo tocan
   coCuadro(0);
 }
 

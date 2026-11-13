@@ -246,3 +246,4 @@ svg .cae { animation: coCae 1.4s cubic-bezier(.3,.7,.4,1) both; }
 .gl-leyenda .gl-sel { flex-basis: 100%; justify-content: center; font-weight: 600; }
 .gl-leyenda .gl-sel i { border: 0; border-top: 3px dashed #d9232a; height: 0; border-radius: 0; }
 .gl-leyenda b { color: var(--rojo); }
+.tipo svg.ico3d { max-width: 150px; aspect-ratio: 1.45; stroke: none; }
