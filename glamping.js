@@ -450,10 +450,11 @@ function glSuelo3D(g, u, modo) {
   const NT = tornillos.length;
   tornillos.forEach(([x, y, n], i) => {
     const vis = modo === 'fija' ? ease((u * 1.15 - i / NT * 0.85) / 0.05) : 1 - ease((u * 1.1 - i / NT * 0.38) / 0.05);
-    if (vis > 0.02) items.push({ punto: true, pts: [[x, y, 1]], o: vis, n });
+    const seVe = n[0] * Math.sin(a) - n[1] * Math.cos(a) > 0.05;
+    if (vis > 0.02 && seVe) items.push({ punto: true, pts: [[x, y, 1]], o: vis, n });
   });
   // proyección y orden (de atrás hacia adelante)
-  const pr = items.map(c => { const pp = c.pts.map(p => glProy(p, a)); return { ...c, pp, z: pp.reduce((s, p) => s + p[2], 0) / pp.length + (c.linea ? 2 : 0) + (c.plano || c.punto ? (c.n[0] * Math.sin(a) - c.n[1] * Math.cos(a) > 0.05 && !sube ? 1e6 + (c.punto ? 1 : 0) : -1e6) : 0) }; });
+  const pr = items.map(c => { const pp = c.pts.map(p => glProy(p, a)); return { ...c, pp, z: pp.reduce((s, p) => s + p[2], 0) / pp.length + (c.linea ? 2 : 0) + (c.plano || c.punto ? (c.n[0] * Math.sin(a) - c.n[1] * Math.cos(a) > 0.05 && !sube ? (c.punto ? 2e6 : 1e6) : -1e6) : 0) }; });   // tornillos siempre encima de las franjas
   pr.sort((A, B) => A.z - B.z);
   // caja fija para que no salte el dibujo mientras sube la lona
   const AL = 300 + (modo === 'suelta' ? SUBE : 0), caja = [[-30, -30, 0], [330, -30, 0], [330, 420, 0], [-30, 420, 0], [0, 0, AL], [300, 400, AL], [0, 400, AL], [300, 0, AL]].map(p => glProy(p, a));
@@ -466,7 +467,8 @@ function glSuelo3D(g, u, modo) {
   const opL = sube > 0 ? 0.92 : 1;
   pr.forEach(c => {
     if (c.linea) { s += `<line x1="${c.pp[0][0].toFixed(1)}" y1="${c.pp[0][1].toFixed(1)}" x2="${c.pp[1][0].toFixed(1)}" y2="${c.pp[1][1].toFixed(1)}" stroke="${c.col}" stroke-width="${c.w}" stroke-linecap="round"/>`; return; }
-    if (c.punto) { const [x, y] = c.pp[0]; s += `<g opacity="${c.o.toFixed(2)}"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="#c4cad0" stroke="#14181b" stroke-width="2"/></g>`; return; }
+    if (c.punto) { const [x, y] = c.pp[0]; const k = 0.6 + 0.4 * c.o;   // al aparecer, el tornillo baja y entra
+      s += `<g opacity="${c.o.toFixed(2)}" transform="translate(${x.toFixed(1)} ${(y - (1 - c.o) * 14).toFixed(1)}) scale(${k.toFixed(2)})"><ellipse rx="6.5" ry="4" fill="#e9ecef" stroke="#14181b" stroke-width="1.8"/><path d="M-3.5 0H3.5M0 -2.2V2.2" stroke="#14181b" stroke-width="1.8"/></g>`; return; }
     s += `<polygon points="${c.pp.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="${c.col}" stroke="${c.borde || '#2b3238'}" stroke-width="${c.borde ? 2 : 1.6}" stroke-linejoin="round" opacity="${c.lona && !c.plano ? opL : 1}"/>`;
   });
   if (modo === 'suelta' && u > 0.45) { const A = glProy([150, 200, 330 + sube * 0.4], a), B = glProy([150, 200, 330 + sube * 0.4 + 90], a); s += flecha(A[0] + 200, A[1], B[0] + 200, B[1], GL_COL.rojo, 5); }
