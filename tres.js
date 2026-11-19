@@ -9,12 +9,15 @@
 // Al cambiar el fondo, el tubo del pico NO cambia (dato de Andrés): H se queda igual.
 // El techo son 4 piezas, como cualquier carpa: 2 lados de 6 m (4 esquinas: cubren las 3 puntas,
 // arriba se sellan entre sí en línea recta de punta a punta) y 2 culatas (triángulos).
-// Las aristas (punta → esquina) llevan la misma curva de la plegable 3 × 3 que quedó bien,
-// en proporción a su largo (REF, K, U0, BETA de app.js). Entre puntas la lona se comba sola: se corta recto.
+// 19-nov (corrección de Andrés): en el molde, la recta de la esquina de la gola a la punta mide EXACTO
+// la arista de la estructura (245 en la 6 × 3), en las dos piezas; nada de holgura extra.
+// La curva es la de la 3 × 3 que quedó bien: se hunde 13,5 a 85,5 de la punta (en la 6 × 3 tal cual;
+// en otras medidas, en proporción al largo de la arista). Entre puntas la lona se comba sola: se corta recto.
 const TP_DEF = { L: 600, F: 300, rollo: 153, pataL: 212, pataA: 40, pataB: 14, patas: 4 };
 const TP = {
   L: 600, REAL: 594, POSTE: 143.5, ARISTA: 245, ALTO: 335,
   H: Math.sqrt(245 ** 2 - 150 ** 2 - 150 ** 2),
+  HUNDE: 13.5, HUNDE_A: 85.5,   // curva de la 3 × 3: lo más hondo y a cuánto de la punta
   RAPIDAS: [[600, 200], [600, 300], [600, 400], [600, 500], [600, 600]],
   MIN: 100, MAX: 600, err: '',
   m: { ...TP_DEF, ...leerLS('tresP', {}) },
@@ -28,8 +31,8 @@ const TP_COL = { largo: '#9cc0ef', culata: '#a6dcae', pata: '#f6c48f', lona: '#e
 function tpCalcular() {
   const m = TP.m, s = st.aj.selle, G = st.aj.gola, F = m.F, H = TP.H, L = m.L;
   const hipGeo = Math.sqrt(H * H + (L / 4) ** 2 + (F / 2) ** 2);
-  const hip = K * hipGeo;                        // como la plegable: la lona sale un poco más grande que la línea
-  const sag = REF.sag * hip / HIP0;
+  const hip = hipGeo;                            // la recta del molde = la arista de la estructura (245 en la 6 × 3)
+  const sag = TP.HUNDE * hip / TP.ARISTA;
   const largo = tpLado('largo', `Lado de ${nm(L)} m`, L, L / 2, hip, sag, G, s, m.rollo);
   const culata = tpLado('culata', `Culata (lado de ${nm(F)} m)`, F, 0, hip, sag, G, s, m.rollo);
   const g = { m, s, G, F, H, L, q: L / 4, hipGeo, hip, sag, lados: [largo, culata], patasMedio: F >= 500 };
@@ -46,14 +49,15 @@ function tpCalcular() {
 // Un lado: abajo la gola (rectángulo), encima el trapecio (o triángulo) hasta la punta.
 // y = desde el borde de abajo de la gola. Cortado en franjas del ancho del rollo, montadas el selle.
 function tpLado(id, nombre, base, top, hip, sag, G, s, R) {
-  const off = (base - top) / 2, S = Math.sqrt(hip * hip - off * off);
   const Wb = base / 2 + s / 2, Wt = top > 0 ? top / 2 + s / 2 : 0;
+  const off = Wb - Wt, S = Math.sqrt(hip * hip - off * off);   // así la recta esquina de la gola → punta mide justo la arista
   const yT = G + S, Ht = yT + (top > 0 ? s / 2 : 0);          // los lados de 6 m llevan medio selle arriba (se sellan entre sí)
   const pend = (Wt - Wb) / S;
   const half = y => y <= G ? Wb : Wb + pend * (y - G);       // recto: así se corta y se sella; la curva se marca después
-  const Lc = Math.hypot(Wb - Wt, S);
-  const A = sag / (U0 * Math.pow(1 - U0, BETA));
-  const prof = u => A * u * Math.pow(1 - u, BETA);
+  const Lc = Math.hypot(Wb - Wt, S);                          // = hip
+  const u0 = TP.HUNDE_A / TP.ARISTA, beta = (1 - u0) / u0;   // lo más hondo a 85,5 de 245, como la 3 × 3
+  const A = sag / (u0 * Math.pow(1 - u0, beta));
+  const prof = u => A * u * Math.pow(1 - u, beta);
   const enRecta = d => {                                      // d desde la punta, por la recta punta → esquina de la gola
     const u = Math.min(1, Math.max(0, d / Lc)), f = prof(u);
     const Q = [Wt + u * (Wb - Wt), yT - u * S], nx = S / Lc, ny = (Wb - Wt) / Lc;
@@ -533,7 +537,7 @@ function tpPintarCurva() {
   $('#tpPuntos').innerHTML = lista.length
     ? lista.map(([d, i]) => `<div class="punto-fila"><div><span class="etq">Desde la punta</span><b>${n1(d)} cm</b></div><div class="hundeval"><span class="etq">Se hunde</span><b>${n1(l.enRecta(d).f)} cm</b></div><button class="quitar" data-tpquitar="${i}">Quitar</button></div>`).join('')
     : '<p class="vacio">Mueve el botón y toca «Marcar este punto».</p>';
-  $('#tpCurvaNota').textContent = `La recta mide ${n1(l.Lc)} cm. Lo más hondo es a ${n1(l.Lc * U0)} cm de la punta (${n1(g.sag)} cm). En la punta y en la esquina no se hunde nada.${l.top ? ' Las 2 aristas del lado largo son iguales; el borde de arriba va recto.' : ''}`;
+  $('#tpCurvaNota').textContent = `La recta mide ${n1(l.Lc)} cm. Lo más hondo es a ${n1(l.Lc * TP.HUNDE_A / TP.ARISTA)} cm de la punta (${n1(g.sag)} cm). En la punta y en la esquina no se hunde nada.${l.top ? ' Las 2 aristas del lado largo son iguales; el borde de arriba va recto.' : ''}`;
   guardarLS('tresPuntos', TP.puntos);
 }
 function tpMoverA(d) { TP.d = Math.round(d * 2) / 2; tpPintarCurva(); }
