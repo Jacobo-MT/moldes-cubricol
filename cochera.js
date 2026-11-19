@@ -3,15 +3,24 @@
 // Cada paso es una lámina que se dibuja sola, cuadro por cuadro, con una frase corta y los números encima del dibujo.
 // Geometría: cerrada es una concha redonda; los arcos de cada punta giran en una bisagra a cada lado y,
 // para abrir, suben y se recogen parados uno sobre otro. Todos los arcos son iguales y todos los gajos salen de UN molde.
-//   R  = el menor entre el alto y la mitad del largo · hc = alto de la bisagra (faldón) · Lm = túnel fijo del medio
+//   R  = alto del tubo (alto total − platina) · hc = alto de la bisagra (faldón) · Lm = túnel fijo del medio
+// 18-nov-2026, medidas reales del taller (por fuera del tubo de ½"): 4,70 × 2,25 × 2,27, 7 arcos.
+//   El arco es una U con las esquinas redondeadas (radio 16: 225 − 193 = 32 y 221 − 205 = 16), no media luna.
+//   Cada arco gira en SU tornillo de la platina: el del centro va 6 cm arriba (227 − 221) y los de afuera
+//   bajan y se corren hasta 14 cm hacia la punta (235 − 221), por eso abierta mide 470 y no 442.
 
-const CO = { c: { L: 500, W: 250, H: 250, paso: 0, ...leerLS('cochera4', {}) }, g: null, f: 0, juega: false, timer: 0, raf: 0, abre: 0 };
-const coGuardar = () => guardarLS('cochera4', { L: CO.c.L, W: CO.c.W, H: CO.c.H, paso: CO.c.paso });
+const CO = { c: { L: 470, W: 225, H: 227, paso: 0, ...leerLS('cochera5', {}) }, g: null, f: 0, juega: false, timer: 0, raf: 0, abre: 0 };
+const coGuardar = () => guardarLS('cochera5', { L: CO.c.L, W: CO.c.W, H: CO.c.H, paso: CO.c.paso });
 const CO_LIM = { L: [300, 900], W: [150, 400], H: [150, 350] };
 const CO_SOLAPE = 5, CO_FIJO = 100;
+// rollo de la cochera: 163 cm (18-nov-2026); la plegable sigue con el suyo
+const CO_ROLLO = 163;
+// platina: el tornillo del arco del centro va a 6 cm del piso; los de las puntas se corren hasta 40 cm (en la real, 14)
+const CO_PLACA = 6, CO_DMAX = 40, CO_RC = 16;
 // funda del arco: tira de 16 cm (3 + 10 que abrazan un tubo de 1" + 3); en las puntas el borde del gajo da la vuelta al tubo
 const CO_FUNDA = 16, CO_SELLO_F = 3, CO_FUNDA_PISO = 13;
-function cocheraNombre() { const c = CO.c; return `Cochera ${n1(c.L / 100)}×${n1(c.W / 100)}×${n1(c.H / 100)}`; }
+const coM = cm => String(Math.round(cm) / 100).replace('.', ',');
+function cocheraNombre() { const c = CO.c; return `Cochera ${coM(c.L)}×${coM(c.W)}×${coM(c.H)}`; }
 
 const d2 = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
 const d3 = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
@@ -19,15 +28,30 @@ const grados = th => n0(Math.abs(th) * 180 / Math.PI);
 const B = v => `<b>${v}</b>`;
 
 // =================== geometría ===================
-function coArco(R, th, a, JW = 24, JA = 120) {
-  const w = Math.max(0, R - a), b = Math.min(R, a), pts = [];
+// Un arco: patas rectas, dos esquinas de radio rc y el techo recto. Puntos relativos a su tornillo.
+function coArco(R, th, a, JW = 24, JA = 120, rc = a) {
+  rc = Math.max(.01, Math.min(rc, a, R));
+  const w = R - rc, xs = a - rc, pts = [], T = Math.PI * rc + 2 * xs;
   const put = (x, r) => pts.push([x, r * Math.sin(th), r * Math.cos(th)]);
+  const JC = xs > .5 ? Math.max(3, Math.round(JA * Math.PI * rc / 2 / T)) : JA / 2, JS = JA - 2 * JC;
   for (let j = 0; j <= JW; j++) put(-a, w * j / JW);
-  for (let j = 1; j <= JA; j++) { const f = Math.PI * (1 - j / JA); put(a * Math.cos(f), w + b * Math.sin(f)); }
+  for (let j = 1; j <= JC; j++) { const f = Math.PI * (1 - j / JC / 2); put(-xs + rc * Math.cos(f), w + rc * Math.sin(f)); }
+  for (let j = 1; j <= JS; j++) put(-xs + 2 * xs * j / JS, R);
+  for (let j = 1; j <= JC; j++) { const f = Math.PI / 2 * (1 - j / JC); put(xs + rc * Math.cos(f), w + rc * Math.sin(f)); }
   for (let j = JW - 1; j >= 0; j--) put(a, w * j / JW);
   let P = 0; for (let i = 1; i < pts.length; i++) P += d3(pts[i], pts[i - 1]);
-  return { R, th, w, pts, P };
+  return { R, th, w, xs, rc, pts, P };
 }
+// el arco puesto en su tornillo (y0, z0)
+const coArcoEn = (g, ar, th, JW, JA) => coArco(g.R, th, g.a, JW, JA, g.rc).pts.map(([x, y, z]) => [x, ar.y0 + y, ar.z0 + z]);
+// medidas de la estructura: R, bisagra, corrimiento de los tornillos, túnel
+function coGeo(L, W, H) {
+  const a = W / 2, R0 = H - CO_PLACA;
+  if (L / 2 >= R0) { const d = Math.min(L / 2 - R0, CO_DMAX); return { a, R: R0, hc: 0, d, Lm: L - 2 * (R0 + d), rc: Math.min(CO_RC, a, R0) }; }
+  const R = L / 2; return { a, R, hc: H - R, d: 0, Lm: 0, rc: Math.min(CO_RC, a, R) };
+}
+// tornillo del arco j (0 = el del centro … N = el de la punta)
+const coPiv = (G, N, j) => ({ dy: G.d * j / N, z: G.hc > 0 ? G.hc : CO_PLACA * (G.d > 0 ? 1 - j / N : 1) });
 function coCorrer(F, m, lado) {
   return F.map((p, i) => {
     let j = i; while (j > 0 && d2(F[j], p) < 1e-9) j--;
@@ -49,9 +73,13 @@ function coCorte(poly, x, mayor) {
 const coArea = pts => { let s = 0; for (let i = 0; i < pts.length; i++) { const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % pts.length]; s += x1 * y2 - x2 * y1; } return Math.abs(s) / 2; };
 
 // Molde del gajo: cadena de cuadros con los bordes exactos al arco y los travesaños con la comba de la lona
-function coGajo(R, a, dTh) {
+// P0, P1 = { th, y, z }: los dos arcos que lo encierran, cada uno con su tornillo
+function coGajo(R, a, rc, P0, P1) {
   const S = 6, C = [];
-  for (let j = 0; j <= S; j++) C.push(coArco(R, dTh * j / S, a).pts);
+  for (let j = 0; j <= S; j++) {
+    const u = j / S, y = P0.y + (P1.y - P0.y) * u, z = P0.z + (P1.z - P0.z) * u;
+    C.push(coArco(R, P0.th + (P1.th - P0.th) * u, a, 24, 120, rc).pts.map(p => [p[0], y + p[1], z + p[2]]));
+  }
   const A = C[0], Bc = C[S], M = A.length - 1;
   const w = A.map((_, i) => { let t = 0; for (let j = 0; j < S; j++) t += d3(C[j][i], C[j + 1][i]); return t; });
   const f = A.map((p, i) => { const c = d3(p, Bc[i]); return c > 1e-6 ? w[i] / c : 1; });
@@ -73,6 +101,16 @@ function coGajo(R, a, dTh) {
     const dAA = d3(A[i], A[i + 1]), dBB = d3(Bc[i], Bc[i + 1]);
     if (!arranco) {
       if (dAA < 1e-9 && dBB < 1e-9) { FA.push(FA[i]); FB.push(FB[i]); continue; }
+      if (i === 0 && w[0] > 1e-6) {   // los tornillos no coinciden: el gajo arranca con un ancho
+        FB[0] = [0, w[0]];
+        const masX = cs => cs[0][0] >= cs[1][0] ? cs[0] : cs[1], fm = (f[0] + f[1]) / 2;
+        FA.push(masX(cand(FA[0], FB[0], dAA, d3(A[1], Bc[0]) * fm)));
+        // B1 va al otro lado de la diagonal A1–B0 que A0 (el cuadro no se dobla sobre sí mismo)
+        const lado = (P, Q, X) => Math.sign((Q[0] - P[0]) * (X[1] - P[1]) - (Q[1] - P[1]) * (X[0] - P[0]));
+        const cs = cand(FA[1], FB[0], w[1], dBB), sA = lado(FA[1], FB[0], FA[0]);
+        FB.push(lado(FA[1], FB[0], cs[0]) !== sA ? cs[0] : cs[1]);
+        arranco = true; continue;
+      }
       FA.push([FA[i][0] + dAA, 0]);
       const cs = cand(FB[i], FA[i + 1], dBB, w[i + 1]);
       FB.push(cs[0][1] >= cs[1][1] ? cs[0] : cs[1]); arranco = true; continue;
@@ -83,7 +121,7 @@ function coGajo(R, a, dTh) {
     else if (w[i + 1] < 1e-9) FB.push(FA[i + 1]);
     else FB.push(adelante(FB, i, cand(FA[i + 1], FB[i], w[i + 1], dBB)));
   }
-  const t0 = FA[0], t1 = [(FA[M][0] + FB[M][0]) / 2, (FA[M][1] + FB[M][1]) / 2];
+  const t0 = [(FA[0][0] + FB[0][0]) / 2, (FA[0][1] + FB[0][1]) / 2], t1 =[(FA[M][0] + FB[M][0]) / 2, (FA[M][1] + FB[M][1]) / 2];
   const ang = Math.atan2(t1[1] - t0[1], t1[0] - t0[0]), cs = Math.cos(-ang), sn = Math.sin(-ang);
   const rot = p => { const x = p[0] - t0[0], y = p[1] - t0[1]; return [x * cs - y * sn, x * sn + y * cs]; };
   const ra = FA.map(rot), rb = FB.map(rot);
@@ -104,34 +142,41 @@ function coPieza(m, mArriba, mAbajo) {
 }
 
 function coCalcular() {
-  const c = CO.c, aj = st.aj, a = c.W / 2;
-  const R = Math.min(c.H, c.L / 2), hc = c.H - R, Lm = c.L - 2 * R;
-  const g = { error: '', a, R, hc, Lm, yF: -Lm / 2, yA: Lm / 2 };
+  const c = CO.c, aj = st.aj, G = coGeo(c.L, c.W, c.H), { a, R, hc, Lm, rc } = G;
+  const g = { error: '', ...G, yF: -Lm / 2, yA: Lm / 2 };
   if (R < 100) { g.error = 'Con esas medidas la cochera queda muy pequeña.'; return g; }
-  g.arco = coArco(R, 0, a);
+  g.arco = coArco(R, 0, a, 24, 120, rc);
   const mPiso = hc > 0 ? aj.selle / 2 : CO_FUNDA_PISO;
+  // un solo molde para todos los gajos: el más ancho de los de una mitad, punto por punto
+  const molde = N => {
+    const dTh = Math.PI / 2 / N, P = j => { const p = coPiv(G, N, j); return { th: -j * dTh, y: -p.dy, z: p.z }; };
+    const ms = []; for (let j = 0; j < N; j++) ms.push(coGajo(R, a, rc, P(j), P(j + 1)));
+    const up = ms[0].arriba.map((p, i) => [ms.reduce((t, m) => t + m.arriba[i][0], 0) / N, Math.max(...ms.map(m => m.arriba[i][1]))]);
+    return { arriba: up, abajo: up.map(p => [p[0], -p[1]]), Lc: Math.max(...ms.map(m => m.Lc)), dif: Math.max(...up.map((p, i) => Math.max(...ms.map(m => p[1] - m.arriba[i][1])))) };
+  };
   let mejor = null;
   for (let N = 2; N <= 12; N++) {
-    const m = coGajo(R, a, Math.PI / 2 / N), normal = coPieza(m, aj.selle / 2, aj.selle / 2), piso = coPieza(m, aj.selle / 2, mPiso);
-    if (Math.max(normal.ancho, piso.ancho) > aj.rollo) continue;
-    const prueba = { N, normal, piso };
+    const m = molde(N), normal = coPieza(m, aj.selle / 2, aj.selle / 2), piso = coPieza(m, aj.selle / 2, mPiso);
+    if (Math.max(normal.ancho, piso.ancho) > CO_ROLLO) continue;
+    const prueba = { N, normal, piso, molde: m };
     coPiezas(g, prueba);
     const largo = coAcomodo(prueba.items).largo;
     if (!mejor || largo < mejor.largo - 1) mejor = { ...prueba, largo }; else break;
   }
   if (!mejor) { g.error = 'Con estas medidas los gajos no caben en el rollo.'; return g; }
-  Object.assign(g, { N: mejor.N, normal: mejor.normal, piso: mejor.piso, dTh: Math.PI / 2 / mejor.N });
+  Object.assign(g, { N: mejor.N, normal: mejor.normal, piso: mejor.piso, molde: mejor.molde, dTh: Math.PI / 2 / mejor.N });
+  const pv = j => coPiv(G, g.N, j);
   g.arcos = [];
-  for (let k = 0; k <= g.N; k++) g.arcos.push({ y0: g.yF, th: -Math.PI / 2 + k * g.dTh, gira: !(Lm > 0 && k === g.N) });
+  for (let k = 0; k <= g.N; k++) { const p = pv(g.N - k); g.arcos.push({ y0: g.yF - p.dy, z0: p.z, th: -Math.PI / 2 + k * g.dTh, gira: !(Lm > 0 && k === g.N) }); }
   if (Lm > 0) {
-    const n = Math.ceil(Lm / CO_FIJO);
-    for (let j = 1; j < n; j++) g.arcos.push({ y0: g.yF + Lm * j / n, th: 0, gira: false });
-    g.arcos.push({ y0: g.yA, th: 0, gira: false });
+    const n = Math.ceil(Lm / CO_FIJO), z0 = pv(0).z;
+    for (let j = 1; j < n; j++) g.arcos.push({ y0: g.yF + Lm * j / n, z0, th: 0, gira: false });
+    g.arcos.push({ y0: g.yA, z0, th: 0, gira: false });
   }
-  for (let k = 1; k <= g.N; k++) g.arcos.push({ y0: g.yA, th: k * g.dTh, gira: true });
+  for (let k = 1; k <= g.N; k++) { const p = pv(k); g.arcos.push({ y0: g.yA + p.dy, z0: p.z, th: k * g.dTh, gira: true }); }
   g.franjas = [];
   if (Lm > 0) {
-    const need = Lm + aj.selle, R0 = aj.rollo;
+    const need = Lm + aj.selle, R0 = CO_ROLLO;
     const n = Math.max(1, Math.ceil((need - aj.selle) / (R0 - aj.selle) - 1e-9)), total = need + (n - 1) * aj.selle, ws = Array(n).fill(R0);
     ws[n - 1] = total - (n - 1) * R0;
     if (n > 1 && ws[n - 1] < 40) { const dos = R0 + ws[n - 1]; ws[n - 2] = ws[n - 1] = dos / 2; }
@@ -142,7 +187,7 @@ function coCalcular() {
   coPiezas(g, g);
   Object.assign(g, coAcomodo(g.items));
   g.areaPiezas = g.items.reduce((t, it) => t + it.area, 0);
-  g.areaRollo = g.largo * aj.rollo;
+  g.areaRollo = g.largo * CO_ROLLO;
   g.caja = coCaja(g);
   return g;
 }
@@ -150,17 +195,18 @@ function coPiezas(g, p) {
   p.items = [];
   for (let n = 0; n < 2 * (p.N - 1); n++) p.items.push({ tipo: 'gajo', t: p.normal, len: p.normal.x1 - p.normal.x0, across: p.normal.ancho, area: p.normal.area, nombre: 'gajo' });
   for (let n = 0; n < 2; n++) p.items.push({ tipo: 'gajo', piso: true, t: p.piso, len: p.piso.x1 - p.piso.x0, across: p.piso.ancho, area: p.piso.area, nombre: 'abajo' });
-  const aj = st.aj, P = coArco(g.R, 0, g.a).P;
+  const aj = st.aj, P = g.arco.P;
   if (g.hc > 0) { const f = { largo: P + 2 * CO_SOLAPE, alto: g.hc + aj.selle / 2 + aj.varilla }; for (let n = 0; n < 2; n++) p.items.push({ tipo: 'rect', len: f.largo, across: f.alto, area: f.largo * f.alto, nombre: 'faldón' }); }
   if (p === g) { const n = g.arcos.length - (g.hc === 0 ? 2 : 0); for (let k = 0; k < n; k++) p.items.push({ tipo: 'rect', len: P, across: CO_FUNDA, area: P * CO_FUNDA, nombre: 'funda' }); }
   if (p === g) g.franjas.forEach(fr => p.items.push({ tipo: 'rect', len: g.largoFranja, across: fr.w, area: fr.w * g.largoFranja, nombre: fr.nombre }));
 }
 function coAcomodo(items) {
-  const R = st.aj.rollo, gap = 2, filas = [];
-  items.slice().sort((a, b) => b.len - a.len || b.across - a.across).forEach(it => {
-    let f = filas.find(f => Math.abs(f.len - it.len) < 0.5 && f.used + gap + it.across <= R + 1e-6);
+  const R = CO_ROLLO, gap = 2, filas = [];
+  // primero las piezas anchas; las tiras angostas se meten en lo que sobra de una fila de largo parecido (±20 cm)
+  items.slice().sort((a, b) => b.across - a.across || b.len - a.len).forEach(it => {
+    let f = filas.find(f => Math.abs(f.len - it.len) < 20 && f.used + gap + it.across <= R + 1e-6);
     if (!f) { f = { len: it.len, used: -gap, items: [] }; filas.push(f); }
-    it.y0 = f.used + gap; f.used = it.y0 + it.across; f.items.push(it);
+    it.y0 = f.used + gap; f.used = it.y0 + it.across; f.len = Math.max(f.len, it.len); f.items.push(it);
   });
   let x = 0;
   filas.forEach(f => { f.x0 = x; x += f.len + gap; });
@@ -188,7 +234,7 @@ function coAng(g, ar, abre) {
 }
 function coArco3D(g, ar, abre) {
   const th = coAng(g, ar, abre);
-  return coArco(g.R, th, g.a, 4, 18).pts.map(([x, y, z]) => [x, ar.y0 + y, g.hc + z]);
+  return coArcoEn(g, ar, th, 4, 18);
 }
 const CO_LUZ = (() => { const v = [-.45, -.55, .7], l = Math.hypot(...v); return v.map(t => t / l); })();
 function coSombra(pts, rgb, k = .45) {
@@ -238,11 +284,11 @@ function co3D(g, o = {}) {
   });
   let bx = g.caja;
   if (o.sube) {
-    const i = o.sube.i, m = g.molde || (g.molde = coGajo(g.R, g.a, g.dTh)), ai = g.arcos[i], bi = g.arcos[i + 1];
+    const i = o.sube.i, m = g.molde, ai = g.arcos[i], bi = g.arcos[i + 1];
     const yP = -c.L / 2 - 120, e = o.sube.u < .5 ? 2 * o.sube.u * o.sube.u : 1 - Math.pow(-2 * o.sube.u + 2, 2) / 2, alza = Math.sin(Math.PI * e) * 60;
-    const a3 = coArco(g.R, ai.th, g.a).pts, b3 = coArco(g.R, bi.th, g.a).pts;
-    const mezcla = (p3, y0, f) => { const w = [p3[0], y0 + p3[1], g.hc + p3[2]], pl = [f[0] - m.Lc / 2, yP + f[1], 0]; return pl.map((v, k) => v + (w[k] - v) * e + (k === 2 ? alza : 0)); };
-    const A = a3.map((p3, j) => mezcla(p3, ai.y0, m.abajo[j])), Bq = b3.map((p3, j) => mezcla(p3, bi.y0, m.arriba[j]));
+    const a3 = coArcoEn(g, ai, ai.th), b3 = coArcoEn(g, bi, bi.th);
+    const mezcla = (w, f) => { const pl = [f[0] - m.Lc / 2, yP + f[1], 0]; return pl.map((v, k) => v + (w[k] - v) * e + (k === 2 ? alza : 0)); };
+    const A = a3.map((p3, j) => mezcla(p3, m.abajo[j])), Bq = b3.map((p3, j) => mezcla(p3, m.arriba[j]));
     for (let j = 0; j < A.length - 1; j += 3) { const k = Math.min(j + 3, A.length - 1), q = [A[j], A[k], Bq[k], Bq[j]]; polys.push({ q, fill: coSombra(q, [217, 35, 42], .3), op: .95 }); }
     const ex = [[-m.Lc / 2 - 20, yP - 90, 0], [m.Lc / 2 + 20, yP - 90, 0], [-m.Lc / 2 - 20, yP + 90, 0], [m.Lc / 2 + 20, yP + 90, 0]].map(coProy);
     const x0 = Math.min(bx.x, ...ex.map(v => v[0])), y0 = Math.min(bx.y, ...ex.map(v => v[1])), x1 = Math.max(bx.x + bx.w, ...ex.map(v => v[0])), y1 = Math.max(bx.y + bx.h, ...ex.map(v => v[1]));
@@ -261,7 +307,7 @@ function co3D(g, o = {}) {
   if (o.fundas) arcos.forEach(A => { s += `<polyline points="${A.map(P2).join(' ')}" fill="none" stroke="#1f8f4e" stroke-width="9" stroke-linejoin="round" stroke-opacity=".8"/>`; });
   if (o.arcos !== false) arcos.forEach((A, k) => { s += `<polyline points="${A.map(P2).join(' ')}" fill="none" stroke="${g.arcos[k].gira ? '#d9232a' : '#39444b'}" stroke-width="${o.lona === false ? 3.5 : 2.2}" stroke-linejoin="round" ${!g.arcos[k].gira ? 'stroke-dasharray="6 4"' : ''}/>`; });
   // bisagras
-  [...new Set([g.yF, g.yA])].forEach(y => [-g.a, g.a].forEach(x => { const v = coProy([x, y, g.hc]); s += `<circle cx="${v[0]}" cy="${v[1]}" r="7" fill="#d9232a" stroke="#fff" stroke-width="2"/>`; }));
+  g.arcos.filter(ar => ar.gira).forEach(ar => [-g.a, g.a].forEach(x => { const v = coProy([x, ar.y0, ar.z0]); s += `<circle cx="${v[0]}" cy="${v[1]}" r="4.5" fill="#d9232a" stroke="#fff" stroke-width="1.5"/>`; }));
   if (o.costura) {
     const A = arcos[o.costura.k], n = A.length - 1, mid = Math.floor(n / 2), u = o.costura.u;
     const l1 = Math.round(Math.min(1, u * 2) * mid), l2 = Math.round(Math.max(0, u * 2 - 1) * (n - mid));
@@ -307,7 +353,7 @@ function coFilasTodo(t) {
 // La mesa de corte vista desde arriba, con el gajo COMPLETO parado de punta a punta
 // etapas: 1 lona, 2 línea, 3 rayitas, 4 puntos, 5 regla, 6 tijera, 7 listo
 function coMesa(g, etapa) {
-  const t = g.normal, R = st.aj.rollo, L = t.Lc, m = 26, W = R + 2 * m, H = L + 2 * m, xc = m + R / 2;
+  const t = g.normal, R = CO_ROLLO, L = t.Lc, m = 26, W = R + 2 * m, H = L + 2 * m, xc = m + R / 2;
   const X = v => xc + v, Y = x => m + x, filas = coFilasTodo(t);
   const camino = 'M' + t.contorno.map(p => `${X(p[1]).toFixed(1)} ${Y(p[0]).toFixed(1)}`).join('L') + 'Z';
   let s = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" role="img" aria-label="Mesa de corte">${FL}`;
@@ -406,27 +452,38 @@ function coPlantilla(g) {
   return s + '</svg>';
 }
 
-// La bisagra vista de lado y de cerca: las puntas de los arcos en un solo tornillo
-// o: u (0 cerrada … 1 abierta), lona, parche, pasador, quieto (sin animaciones de aparecer)
+// La platina vista de lado y de cerca: cada arco gira en SU tornillo, uno más salido que el otro (a escala)
+// o: u (0 cerrada … 1 abierta), lona, parche, pasador, cotas, quieto (sin animaciones de aparecer)
 function coBisagraLado(g, o = {}) {
-  const Lt = 95, W = 300, alto = g.hc > 0, H = alto ? 220 : 210, cx = W / 2, cy = 128, u = o.u || 0, ap = o.quieto ? '' : 'ap';
-  const arcs = g.arcos.filter(ar => ar.y0 === g.yF).map(ar => ({ ...ar, ang: coAng(g, ar, u) })).sort((a, b) => a.ang - b.ang);
-  const P = (th, r) => [cx + r * Math.sin(th), cy - r * Math.cos(th)];
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="La bisagra de cerca">`;
-  if (alto) s += `<rect x="${cx - 7}" y="${cy + 4}" width="14" height="${H - cy - 16}" fill="#9aa3a9" stroke="#39444b"/><text x="${cx + 14}" y="${H - 22}" font-size="14" class="gris">poste</text><line x1="0" y1="${H - 12}" x2="${W}" y2="${H - 12}" stroke="#39444b" stroke-width="3"/>`;
-  else s += `<line x1="0" y1="${cy + 14}" x2="${W}" y2="${cy + 14}" stroke="#39444b" stroke-width="3"/>`;
-  s += `<rect x="${cx - 34}" y="${cy + 5}" width="68" height="9" rx="2" fill="#9aa3a9" stroke="#39444b"/>`;
-  if (!alto) s += `<text x="${cx}" y="${cy + 58}" font-size="13" text-anchor="middle" class="gris">platina atornillada al piso</text>`;
+  const Lt = 95, W = 320, alto = g.hc > 0, H = alto ? 220 : 210, u = o.u || 0, ap = o.quieto ? '' : 'ap', k = 2.2;
+  const arcs = g.arcos.filter(ar => ar.gira && (g.Lm === 0 || ar.y0 <= g.yF + 1e-6)).map(ar => ({ ...ar, ang: coAng(g, ar, u) })).sort((a, b) => a.ang - b.ang);
+  const yc = g.Lm === 0 ? 0 : g.yF, cx = W / 2 + (g.Lm === 0 ? 0 : 50), Yg = alto ? 128 : 150;
+  const piv = ar => [cx + (ar.y0 - yc) * k, alto ? Yg : Yg - ar.z0 * k];
+  const P = (ar, r) => { const [x, y] = piv(ar); return [x + r * Math.sin(ar.ang), y - r * Math.cos(ar.ang)]; };
+  const pv = arcs.map(piv), xs = pv.map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const centro = piv(arcs.reduce((m, ar) => Math.abs(ar.y0 - yc) < Math.abs(m.y0 - yc) ? ar : m, arcs[0]));
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="La platina de cerca">${FL}`;
+  if (alto) s += `<rect x="${cx - 7}" y="${Yg + 4}" width="14" height="${H - Yg - 16}" fill="#9aa3a9" stroke="#39444b"/><text x="${cx + 14}" y="${H - 22}" font-size="14" class="gris">poste</text><line x1="0" y1="${H - 12}" x2="${W}" y2="${H - 12}" stroke="#39444b" stroke-width="3"/>`;
+  else s += `<line x1="0" y1="${Yg + 2}" x2="${W}" y2="${Yg + 2}" stroke="#39444b" stroke-width="3"/>`;
+  // platina: sigue los tornillos (alta en el centro, baja hacia las puntas)
+  const borde = pv.slice().sort((a, b) => a[0] - b[0]).map(([x, y]) => `${x.toFixed(1)},${(y - 8).toFixed(1)}`);
+  s += `<polygon points="${(x0 - 10).toFixed(1)},${Yg + 1} ${borde.join(' ')} ${(x1 + 10).toFixed(1)},${Yg + 1}" fill="#9aa3a9" stroke="#39444b" stroke-linejoin="round"/>`;
+  if (!alto && !o.cotas && !o.parche && !o.pasador) s += `<text x="${cx}" y="${Yg + 40}" font-size="13" text-anchor="middle" class="gris">platina atornillada al piso</text>`;
   if (o.lona) for (let i = 0; i < arcs.length - 1; i++) {
-    const a = arcs[i].ang, b = arcs[i + 1].ang, r = Lt + 18, p = P(a, r), q = P(b, r);
-    s += `<path d="M${cx} ${cy} L${p[0].toFixed(1)} ${p[1].toFixed(1)} A${r} ${r} 0 0 1 ${q[0].toFixed(1)} ${q[1].toFixed(1)}Z" fill="${i % 2 ? '#d7ddf3' : '#c4cdec'}" stroke="#5462b4" stroke-width=".8"/>`;
+    const p0 = pv[i], p1 = pv[i + 1], a = P(arcs[i], Lt + 18), b = P(arcs[i + 1], Lt + 18);
+    s += `<polygon points="${[p0, a, b, p1].map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="${i % 2 ? '#d7ddf3' : '#c4cdec'}" stroke="#5462b4" stroke-width=".8"/>`;
   }
-  arcs.forEach(ar => { const p = P(ar.ang, Lt); s += `<line x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="${ar.gira ? '#d9232a' : '#39444b'}" stroke-width="7" stroke-linecap="round"/>`; });
-  s += `<circle cx="${cx}" cy="${cy}" r="7" fill="#d9232a" stroke="#14181b" stroke-width="1.5"/><circle cx="${cx}" cy="${cy}" r="2.6" fill="#14181b"/>`;
-  if (o.parche) s += `<g class="${ap}" style="--d:.6s"><circle cx="${cx}" cy="${cy}" r="15" fill="#9aa8dc" fill-opacity=".9" stroke="#14181b" stroke-width="1.5"/><circle cx="${cx}" cy="${cy}" r="2.6" fill="#fff" stroke="#14181b"/></g>
-    <g class="${ap}" style="--d:1.2s"><text x="${cx}" y="${cy + 36}" font-size="14" text-anchor="middle">círculo de lona de 30 cm</text></g>`;
-  else if (!o.lona) s += `<g class="${ap}" style="--d:.4s"><line x1="${cx + 4}" y1="${cy + 4}" x2="${cx + 60}" y2="${cy + 26}" stroke="#14181b"/><text x="${cx + 64}" y="${cy + 30}" font-size="14">tornillo</text></g>`;
-  if (o.pasador) { const p = P(-Math.PI / 2 + .25, 26); s += `<g class="${ap}" style="--d:.5s"><circle cx="${p[0]}" cy="${cy + 2}" r="4.5" fill="#14181b"/><line x1="${p[0] - 4}" y1="${cy + 4}" x2="${p[0] - 30}" y2="${cy + 26}" stroke="#14181b"/><text x="${p[0] - 34}" y="${cy + 38}" font-size="14" text-anchor="end">pasador</text></g>`; }
+  arcs.forEach((ar, i) => { const p = P(ar, Lt); s += `<line x1="${pv[i][0].toFixed(1)}" y1="${pv[i][1].toFixed(1)}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="#d9232a" stroke-width="5" stroke-linecap="round"/>`; });
+  pv.forEach(([x, y]) => { s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="#fff" stroke="#14181b" stroke-width="1.5"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.5" fill="#14181b"/>`; });
+  if (o.parche) s += `<g class="${ap}" style="--d:.6s"><ellipse cx="${((x0 + x1) / 2).toFixed(1)}" cy="${centro[1] + 4}" rx="${((x1 - x0) / 2 + 18).toFixed(1)}" ry="20" fill="#9aa8dc" fill-opacity=".85" stroke="#14181b" stroke-width="1.5"/></g>
+    <g class="${ap}" style="--d:1.2s"><text x="${cx}" y="${Yg + 40}" font-size="14" text-anchor="middle">un parche de lona sobre los tornillos</text></g>`;
+  else if (!o.lona && !o.cotas && !o.pasador) s += `<g class="${ap}" style="--d:.4s"><line x1="${x1 + 2}" y1="${pv[xs.indexOf(x1)][1]}" x2="${x1 + 34}" y2="${Yg + 22}" stroke="#14181b"/><text x="${Math.min(W - 4, x1 + 120)}" y="${Yg + 38}" font-size="14" text-anchor="end">un tornillo por arco</text></g>`;
+  if (o.cotas && !alto) {
+    const lejos = pv[xs.indexOf(g.Lm === 0 ? x1 : x0)];
+    s += `<g class="${ap}">${flecha(x0 - 24, Yg + 2, x0 - 24, centro[1])}<line x1="${x0 - 30}" y1="${centro[1]}" x2="${centro[0]}" y2="${centro[1]}" stroke="#14181b" stroke-dasharray="3 3"/><text x="${x0 - 30}" y="${centro[1] - 8}" font-size="15" text-anchor="end" class="co-cota">${n0(CO_PLACA)} cm</text></g>`;
+    if (g.d > 0) s += `<g class="${ap}" style="--d:.6s">${flecha(centro[0], Yg + 20, lejos[0], Yg + 20)}<text x="${(centro[0] + lejos[0]) / 2}" y="${Yg + 40}" font-size="15" text-anchor="middle" class="co-cota">${n0(g.d)} cm</text></g>`;
+  }
+  if (o.pasador) s += `<g class="${ap}" style="--d:.5s"><circle cx="${centro[0] - 12}" cy="${centro[1] + 2}" r="3.5" fill="#14181b"/><line x1="${centro[0] - 15}" y1="${centro[1] + 4}" x2="${centro[0] - 40}" y2="${Yg + 26}" stroke="#14181b"/><text x="${centro[0] - 44}" y="${Yg + 36}" font-size="14" text-anchor="end">pasador</text></g>`;
   return s + '</svg>';
 }
 
@@ -520,60 +577,61 @@ function coTubo(g, u) {
     const w = g.arco.w;
     s += `<g class="ap">${flecha(X(-a), Y(-26), X(a), Y(-26))}<text x="${X(0)}" y="${Y(-26) + 32}" font-size="40" text-anchor="middle" class="co-cota">${n0(2 * a)}</text></g>`;
     if (w > 0) s += `<g class="ap" style="--d:.5s">${flecha(X(-a - 30), Y(0), X(-a - 30), Y(w))}<text x="${X(-a - 40)}" y="${Y(w / 2) + 10}" font-size="40" text-anchor="end" class="co-cota">${n0(w)}</text><text x="${X(-a - 40)}" y="${Y(w / 2) + 38}" font-size="26" text-anchor="end" class="gris">recto</text></g>`;
-    s += `<g class="ap" style="--d:1s"><line x1="${X(0)}" y1="${Y(w)}" x2="${X(Math.min(a, R) * Math.cos(.8))}" y2="${Y(w + Math.min(a, R) * Math.sin(.8))}" stroke="#14181b" stroke-width="2.5"/><circle cx="${X(0)}" cy="${Y(w)}" r="5"/><text x="${X(30)}" y="${Y(w + 30)}" font-size="36" class="co-cota">radio ${n0(Math.min(a, R))}</text></g>`;
+    const xs = g.arco.xs, rc = g.arco.rc;
+    s += `<g class="ap" style="--d:1s"><line x1="${X(xs)}" y1="${Y(w)}" x2="${X(xs + rc * Math.cos(.8))}" y2="${Y(w + rc * Math.sin(.8))}" stroke="#14181b" stroke-width="2.5"/><circle cx="${X(xs)}" cy="${Y(w)}" r="5"/><text x="${X(xs - 14)}" y="${Y(w - 40)}" font-size="36" text-anchor="end" class="co-cota">radio ${n0(rc)}</text></g>`;
+    if (xs > 1) s += `<g class="ap" style="--d:1.5s">${flecha(X(-xs), Y(R + 24), X(xs), Y(R + 24))}<text x="${X(0)}" y="${Y(R + 36)}" font-size="40" text-anchor="middle" class="co-cota">${n0(2 * xs)} <tspan class="gris" font-size="26">recto</tspan></text></g>`;
   }
   return s + '</svg>';
 }
 function coAbanico(g) {
-  const R = g.R, W = 2 * R + 160, H = R + 90, X = y => W / 2 + y, Y = z => H - 40 - z;
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Los arcos en abanico">${FL}`;
-  s += `<path d="M${X(-R)} ${Y(0)} A${R} ${R} 0 0 1 ${X(R)} ${Y(0)}" fill="#eef1fb" stroke="#5462b4" stroke-width="2"/>`;
-  for (let k = 0; k <= 2 * g.N; k++) {
-    const th = -Math.PI / 2 + k * g.dTh, x = R * Math.sin(th), z = R * Math.cos(th);
-    s += `<line class="ap" style="--d:${(k * .15).toFixed(2)}s" x1="${X(0)}" y1="${Y(0)}" x2="${X(x)}" y2="${Y(z)}" stroke="#d9232a" stroke-width="5" stroke-linecap="round"/>`;
-    s += `<text class="ap" style="--d:${(k * .15).toFixed(2)}s" x="${X(x * 1.13)}" y="${Y(z * 1.13) + 8}" font-size="24" text-anchor="middle">${grados(th)}°</text>`;
-  }
-  const t1 = -g.dTh / 2;
-  s += `<g class="ap" style="--d:2s"><path d="M${X(R * Math.sin(-g.dTh) * .84)} ${Y(R * Math.cos(-g.dTh) * .84)} A${R * .84} ${R * .84} 0 0 1 ${X(0)} ${Y(R * .84)}" fill="none" stroke="#14181b" stroke-width="2.5" marker-start="url(#fl2)" marker-end="url(#fl2)"/><text x="${X(R * .7 * Math.sin(t1))}" y="${Y(R * .7 * Math.cos(t1))}" font-size="26" text-anchor="middle" class="co-cota">${n0(R * g.dTh)}</text></g>`;
-  s += `<circle cx="${X(0)}" cy="${Y(0)}" r="10" fill="#d9232a" stroke="#fff" stroke-width="3"/><line x1="0" y1="${Y(0)}" x2="${W}" y2="${Y(0)}" stroke="#39444b" stroke-width="3"/>`;
-  return s + '</svg>';
-}
-function coBisagra(g) {
-  const n = 2 * g.N + 1, W = 360, H = 230, x0 = 60, paso = Math.min(34, 220 / n);
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="La bisagra">`;
-  s += `<rect x="${x0 - 30}" y="112" width="${n * paso + 70}" height="14" rx="4" fill="#9aa3a9" stroke="#39444b"/>`;
-  s += `<rect x="${x0 - 46}" y="98" width="18" height="42" rx="3" fill="#39444b"/>`;
-  for (let i = 0; i < n; i++) {
-    const x = x0 + i * paso;
-    s += `<g class="ap" style="--d:${(i * .12).toFixed(2)}s"><rect x="${x}" y="60" width="${paso * .55}" height="118" rx="5" fill="#d9232a"/></g>`;
-    if (i < n - 1) s += `<rect class="ap" style="--d:${(i * .12 + .06).toFixed(2)}s" x="${x + paso * .6}" y="100" width="${paso * .3}" height="38" rx="2" fill="#f2c200" stroke="#a88400"/>`;
-  }
-  const xe = x0 + n * paso + 14;
-  s += `<g class="ap" style="--d:${(n * .12 + .3).toFixed(2)}s"><rect x="${xe}" y="96" width="22" height="46" rx="3" fill="#14181b"/><text x="${xe + 11}" y="88" font-size="16" text-anchor="middle">tuerca</text></g>`;
-  s += `<text x="${x0 + 10}" y="44" font-size="16" class="rojo">punta aplastada de cada arco (${n})</text><text x="${x0 - 37}" y="168" font-size="15" text-anchor="middle">tornillo</text><text x="${x0 + paso * 1.5}" y="${H - 14}" font-size="16" fill="#a88400" style="fill:#a88400">arandelas</text>`;
+  const R = g.R, ext = R + g.d + g.Lm / 2, W = 2 * ext + 160, H = R + 150, X = y => W / 2 + y, Y = z => H - 90 - z;
+  const gira = g.arcos.filter(ar => ar.gira), tip = ar => [ar.y0 + R * Math.sin(ar.th), ar.z0 + R * Math.cos(ar.th)];
+  let s = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" role="img" aria-label="Los arcos en abanico">${FL}`;
+  const ul = g.arcos[g.arcos.length - 1], contorno = [[g.arcos[0].y0, g.arcos[0].z0], ...g.arcos.map(tip), [ul.y0, ul.z0]];
+  s += `<polygon points="${coP(contorno, X, Y)}" fill="#eef1fb" stroke="#5462b4" stroke-width="2" stroke-linejoin="round"/>`;
+  gira.forEach((ar, k) => {
+    const [x, z] = tip(ar), d = `style="--d:${(k * .15).toFixed(2)}s"`;
+    s += `<line class="ap" ${d} x1="${X(ar.y0)}" y1="${Y(ar.z0)}" x2="${X(x)}" y2="${Y(z)}" stroke="#d9232a" stroke-width="5" stroke-linecap="round"/>`;
+    s += `<text class="ap" ${d} x="${X(ar.y0 + (x - ar.y0) * 1.13)}" y="${Y(ar.z0 + (z - ar.z0) * 1.13) + 8}" font-size="24" text-anchor="middle">${grados(ar.th)}°</text>`;
+  });
+  const c0 = gira.find(ar => Math.abs(ar.th + g.dTh) < 1e-6) || gira[0];
+  const Ra = R * .84, oy = c0.y0, oz = c0.z0, t1 = -g.dTh / 2;
+  s += `<g class="ap" style="--d:2s"><path d="M${X(oy + Ra * Math.sin(-g.dTh))} ${Y(oz + Ra * Math.cos(-g.dTh))} A${Ra} ${Ra} 0 0 1 ${X(oy)} ${Y(oz + Ra)}" fill="none" stroke="#14181b" stroke-width="2.5" marker-start="url(#fl2)" marker-end="url(#fl2)"/><text x="${X(oy + R * .7 * Math.sin(t1))}" y="${Y(oz + R * .7 * Math.cos(t1))}" font-size="26" text-anchor="middle" class="co-cota">${n0(R * g.dTh)}</text></g>`;
+  gira.forEach(ar => { s += `<circle cx="${X(ar.y0)}" cy="${Y(ar.z0)}" r="5" fill="#d9232a" stroke="#fff" stroke-width="1.5"/>`; });
+  s += `<line x1="0" y1="${Y(0)}" x2="${W}" y2="${Y(0)}" stroke="#39444b" stroke-width="3"/>`;
+  s += `<g class="ap" style="--d:2.4s">${flecha(X(-ext), Y(-22), X(ext), Y(-22))}<text x="${X(0)}" y="${Y(-22) + 30}" font-size="26" text-anchor="middle" class="co-cota">abierta ${n0(2 * ext)}</text></g>`;
   return s + '</svg>';
 }
 // ¿cabe el carro? se prueba en 3D con las esquinas de un carro de 4,5 × 1,8 m
 const CO_CARRO = [[90, 225, 72], [88, 160, 96], [72, 75, 148], [72, -60, 148], [88, -130, 98], [90, -225, 72]];
-function coDentro(R, a, hc, Lm, [x, y, z]) {
-  const yy = Math.max(0, Math.abs(y) - Lm / 2), zz = z - hc;
-  if (Math.abs(x) >= a) return false;
-  const w = Math.max(0, R - a), b = Math.min(R, a), rp = w + b * Math.sqrt(1 - (x / a) ** 2);
-  if (zz < 0) return yy <= rp - 4;   // debajo de la bisagra: el faldón cae derecho
-  return Math.hypot(yy, zz) <= rp - 4;
+function coDentro(G, [x, y, z]) {
+  const { a, R, rc, hc, d, Lm } = G, ax = Math.abs(x);
+  if (ax >= a) return false;
+  const xs = a - rc, rp = ax <= xs ? R : R - rc + Math.sqrt(Math.max(0, rc * rc - (ax - xs) ** 2));
+  const yy = Math.max(0, Math.abs(y) - Lm / 2);
+  if (hc > 0) { const zz = z - hc; if (zz < 0) return yy <= rp - 4; return Math.hypot(yy, zz) <= rp - 4; }
+  // con los tornillos corridos: busca el arco (ángulo t) en cuyo plano queda el punto
+  for (let i = 0; i <= 90; i++) {
+    const t = Math.PI / 2 * i / 90, j = i / 90, py = d * j, pz = CO_PLACA * (d > 0 ? 1 - j : 1);
+    if (Math.atan2(yy - py, z - pz) <= t + 1e-9) return Math.hypot(yy - py, z - pz) <= rp - 4;
+  }
+  return false;
 }
 function coCabeCarro(L, W, H) {
-  const R = Math.min(H, L / 2), hc = H - R, Lm = L - 2 * R;
-  return CO_CARRO.every(p => coDentro(R, W / 2, hc, Lm, p));
+  const G = coGeo(L, W, H);
+  return CO_CARRO.every(p => coDentro(G, p));
 }
 function coLargoMin(W, H) { for (let L = 300; L <= 1200; L += 10) if (coCabeCarro(L, W, H)) return L; return 0; }
 // de lado, cortado por la mitad
 function coCabe(g) {
   const c = CO.c, L = c.L, H = c.H, W = L + 60, Hv = H + 70, X = y => 30 + L / 2 + y, Y = z => Hv - 30 - z;
-  const alto = y => { const d = Math.max(0, Math.abs(y) - g.Lm / 2); return d < g.R ? g.hc + Math.sqrt(g.R * g.R - d * d) : 0; };
+  const tip = (t, lado) => { const j = Math.abs(t) / (Math.PI / 2), p = coPiv(g, 1, j); return [(lado < 0 ? g.yF : g.yA) + lado * p.dy + g.R * Math.sin(t), p.z + g.R * Math.cos(t)]; };
   const len = 450, carro = [[-225, 15], [-225, 75], [-200, 92], [-90, 98], [-55, 148], [70, 150], [120, 102], [215, 92], [225, 70], [225, 15]];
   const ok = coCabeCarro(c.L, c.W, c.H);
-  const cerr = []; for (let i = 0; i <= 80; i++) { const y = -L / 2 + L * i / 80; cerr.push([y, alto(y)]); }
+  const cerr = [];
+  for (let i = 0; i <= 40; i++) cerr.push(tip(-Math.PI / 2 + Math.PI / 2 * i / 40, -1));
+  for (let i = 0; i <= 40; i++) cerr.push(tip(Math.PI / 2 * i / 40, 1));
+  cerr.unshift([cerr[0][0], 0]); cerr.push([cerr[cerr.length - 1][0], 0]);
   let s = `<svg viewBox="0 0 ${W} ${Hv}" role="img" aria-label="¿Cabe el carro?">`;
   s += `<polygon points="${coP(cerr, X, Y)}" fill="#eef1fb" stroke="#5462b4" stroke-width="2.5"/>`;
   s += `<polygon class="ap" points="${coP(carro, X, Y)}" fill="${ok ? '#1f8f4e' : '#d9232a'}" fill-opacity=".8"/>`;
@@ -583,7 +641,7 @@ function coCabe(g) {
   return s + '</svg>';
 }
 function coRolloFilas(g) {
-  const R = st.aj.rollo, Lmax = Math.max(...g.filas.map(f => f.len)), W = Lmax + 150, fh = R + 26, H = g.filas.length * fh + 10;
+  const R = CO_ROLLO, Lmax = Math.max(...g.filas.map(f => f.len)), W = Lmax + 150, fh = R + 26, H = g.filas.length * fh + 10;
   let s = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" role="img" aria-label="Cómo sale del rollo">`;
   let acum = 0;
   g.filas.forEach((f, i) => {
@@ -636,11 +694,11 @@ const CO_ESC = {
     { t: `Un tubo de ${B(n1(g.arco.P))} se dobla así.`, anim: { dur: 2600, f: u => coTubo(g, u) } },
     { t: `Haz ${B(g.arcos.length + ' arcos')} iguales.`, svg: () => coTubo(g, 1) },
     { t: `Abiertos en abanico, cada ${B(grados(g.dTh) + '°')}.`, svg: () => coAbanico(g) },
-    { t: `De cerca: las puntas van en ${B('un solo tornillo')} y giran.`, anim: { dur: 4000, f: u => coBisagraLado(g, { u: Math.sin(u * Math.PI), quieto: true }) } },
-    { t: 'Visto de frente: tubo, arandela, tubo, arandela…', svg: () => coBisagra(g) },
+    { t: `De cerca: cada arco gira en ${B('su propio tornillo')} de la platina.`, anim: { dur: 4000, f: u => coBisagraLado(g, { u: Math.sin(u * Math.PI), quieto: true }) } },
+    ...(g.hc === 0 ? [{ t: g.d > 0 ? `El del centro va ${B(n0(CO_PLACA) + ' cm')} arriba; los de afuera bajan y se corren hasta ${B(n0(g.d) + ' cm')}.` : `Los tornillos van a ${B(n0(CO_PLACA) + ' cm')} del piso.`, svg: () => coBisagraLado(g, { u: 0, cotas: true }) }] : []),
     { t: g.hc > 0 ? `Bisagra a ${B(n0(g.hc) + ' cm')} del piso, en la mitad.` : 'Una bisagra a cada lado, en la mitad del largo.', svg: () => co3D(g, { lona: false, etiquetas: [[[g.a + 20, g.yA, g.hc + 20], 'bisagra', 'rojo']] }) },
   ] }),
-  lona: g => ({ titulo: 'Lona', arriba: `<div class="total"><span class="etq">Compra</span><b>${n1(Math.ceil(g.largo / 50) / 2 + .5)} m</b><span>de rollo de ${n0(st.aj.rollo)} cm</span></div>`, cuadros: [
+  lona: g => ({ titulo: 'Lona', arriba: `<div class="total"><span class="etq">Compra</span><b>${n1(Math.ceil(g.largo / 50) / 2 + .5)} m</b><span>de rollo de ${n0(CO_ROLLO)} cm</span></div>`, cuadros: [
     { t: 'Así salen las piezas del rollo.', svg: () => coRolloFilas(g) },
     { t: g.hc === 0 ? `${B(2 * g.N)} gajos: ${B(2 * g.N - 2)} azules iguales y ${B(2)} rojos más anchos.` : `${B(2 * g.N)} gajos, todos iguales.`, svg: () => coPlantilla(g) },
     { t: `Y ${B(g.arcos.length - (g.hc === 0 ? 2 : 0))} tiras para las fundas de los arcos.`, svg: () => coFunda() },
@@ -685,7 +743,7 @@ const CO_ESC = {
       { t: `Cada borde trae ${B(n1(st.aj.selle / 2))}: uno encima del otro quedan ${B(n1(st.aj.selle) + ' cm')} para sellar.`, svg: () => coSelle(g) },
       { t: 'Como en la plegable: sobre la guía curva, y sellas avanzando.', svg: () => coGuia() },
       ...pasos,
-      { t: `Todas las puntas llegan al tornillo: refuérzalas con un círculo de lona, por dentro y por fuera.`, svg: () => coBisagraLado(g, { lona: true, parche: true }) },
+      { t: `Todas las puntas llegan a la platina: refuérzalas con un parche de lona, por dentro y por fuera.`, svg: () => coBisagraLado(g, { lona: true, parche: true }) },
     ] };
   },
   montar: g => ({ titulo: 'Montar', cuadros: [
@@ -693,7 +751,7 @@ const CO_ESC = {
     { t: `Debajo de cada unión de dos gajos se sella una ${B('tira')}: esa es la funda.`, svg: () => coFunda() },
     ...(g.hc === 0 ? [{ t: 'En las puntas, el mismo borde del gajo hace la funda.', svg: () => coFundaPiso() }] : []),
     { t: 'Mete cada tubo ya doblado por su funda, desde una punta.', anim: { dur: 3600, f: u => coMeter(g, u) } },
-    { t: 'Atornilla las puntas de los arcos en la bisagra.', svg: () => coBisagraLado(g, { lona: true }) },
+    { t: 'Atornilla cada arco en su tornillo de la platina.', svg: () => coBisagraLado(g, { lona: true }) },
   ] }),
   mover: g => ({ titulo: 'Abrir y cerrar', cuadros: [
     { t: 'Cose una manija en el arco de adelante.', svg: () => co3D(g, { manija: true }) },
@@ -777,7 +835,7 @@ function coTexto(g) {
   t += t0.filas.map((r, i) => `   ${n1(r.x)} → ${n1((r.up + r.dn) / 2)} (${n1(g.piso.filas[i].dn)})`).join('\n') + '\n';
   if (g.franjas.length) t += `\n*Túnel:* ` + g.franjas.map(f => `${f.nombre} ${n1(f.w)} × ${n1(g.largoFranja)}`).join(' · ') + '\n';
   if (g.faldon) t += `\n*Faldón* (cortar 2): ${n1(g.faldon.largo)} × ${n1(g.faldon.alto)}\n`;
-  t += `\n*Lona:* ≈ ${n1(g.largo / 100)} m de rollo de ${n0(st.aj.rollo)}`;
+  t += `\n*Lona:* ≈ ${n1(g.largo / 100)} m de rollo de ${n0(CO_ROLLO)}`;
   return t;
 }
 
