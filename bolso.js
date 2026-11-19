@@ -460,7 +460,7 @@ function pintarBolso() {
   const g = BO.g = boCalcular();
   BO.paso = Math.min(Math.max(0, BO.paso), BO_PASOS.length - 1);
   const i = BO.paso, [id] = BO_PASOS[i];
-  $('#pillCarpa').textContent = 'Bolsito de herramientas';
+  $('#pillCarpa').textContent = 'Bolsito';
   $('#boPasos').innerHTML = BO_PASOS.map(([k, t], j) => `<button data-paso="${j}" ${j === i ? 'aria-current="step"' : ''}><span>${j + 1}</span>${t}</button>`).join('');
   const esc = BO.esc = BO_ESC[id](g);
   $('#boCuerpo').innerHTML = `<h1>${esc.titulo}</h1>${esc.arriba || ''}

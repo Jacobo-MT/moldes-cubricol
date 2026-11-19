@@ -1,5 +1,5 @@
 // Primero la red (para que siempre llegue la versión nueva); si no hay señal, lo guardado.
-const CACHE = 'moldes-v24';
+const CACHE = 'moldes-v25';
 const BASE = ['./', 'index.html', 'app.css', 'app.js', 'cochera.js', 'glamping.js', 'bolso.js', 'manifest.webmanifest', 'icons/logo-claro.png', 'icons/icon-192.png'];
 
 self.addEventListener('install', e => {
@@ -10,6 +10,7 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  if (/\.mp4(\?|$)/.test(e.request.url)) return;   // los videos van directo (el iPhone pide por partes)
   const mio = new URL(e.request.url).origin === location.origin;
   // los archivos de la app se piden siempre frescos (sin la copia del navegador)
   e.respondWith(

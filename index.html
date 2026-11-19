@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Narrow:wght@600;700&display=swap">
-<link rel="stylesheet" href="app.css?v=24">
+<link rel="stylesheet" href="app.css?v=25">
 </head>
 <body>
 
@@ -37,6 +37,7 @@
   <header class="barra">
     <img src="icons/logo-claro.png" alt="Carpas Cubricol" class="barra-logo">
     <button class="pill" id="pillCarpa" aria-label="Cambiar carpa"></button>
+    <button class="pill pill-render" id="btnRender" hidden aria-label="Ver el render animado">▶ Render</button>
     <button class="engranaje" id="btnAjustes" aria-label="Ajustes del taller">
       <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.5 7.5 0 0 0-1.7-1L14.9 3h-4l-.4 2.9a7.5 7.5 0 0 0-1.7 1l-2.5-1-2 3.5L6.4 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.5 7.5 0 0 0 1.7 1l.4 2.9h4l.4-2.9a7.5 7.5 0 0 0 1.7-1l2.5 1 2-3.5zM12.9 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
     </button>
@@ -195,9 +196,18 @@
   </nav>
 </div>
 
-<script src="app.js?v=24"></script>
-<script src="cochera.js?v=24"></script>
-<script src="glamping.js?v=24"></script>
-<script src="bolso.js?v=24"></script>
+<!-- Render animado del módulo -->
+<div class="modal-render" id="modalRender" hidden>
+  <div class="mr-caja" role="dialog" aria-label="Render animado">
+    <div class="mr-top"><b id="mrTitulo">Render</b><button class="mr-x" id="mrCerrar" aria-label="Cerrar">✕</button></div>
+    <video id="mrVideo" playsinline muted loop preload="none"></video>
+    <p class="mr-nota" id="mrNota"></p>
+  </div>
+</div>
+
+<script src="app.js?v=25"></script>
+<script src="cochera.js?v=25"></script>
+<script src="glamping.js?v=25"></script>
+<script src="bolso.js?v=25"></script>
 </body>
 </html>

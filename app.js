@@ -333,7 +333,8 @@ function ir(v) {
   $$('.vista[id^="v-"]').forEach(s => { s.hidden = s.id !== 'v-' + v; });
   $$('#tabs button').forEach(b => { if (b.dataset.v === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   $('#tabs').hidden = v === 'cochera' || v === 'glamping' || v === 'bolso';
-  $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : v === 'bolso' ? 'Bolsito de herramientas' : `Plegable ${tam()}`;
+  $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : v === 'bolso' ? 'Bolsito' : `Plegable ${tam()}`;
+  $('#btnRender').hidden = !RENDERS[v];
   if (v === 'ajustes') pintarAjustes();
   if (v === 'cochera') pintarCochera(); else if (typeof coParar === 'function') coParar();
   if (v === 'glamping') pintarGlamping(); else if (typeof glParar === 'function') glParar();
@@ -360,6 +361,19 @@ $$('.stepper button').forEach(b => b.addEventListener('click', () => {
 ['largo', 'ancho'].forEach(id => $('#' + id).addEventListener('change', e => fijarMedida(id, parseFloat(String(e.target.value).replace(',', '.')) || 3)));
 $('#verMoldes').addEventListener('click', () => ir('piezas'));
 $('#pillCarpa').addEventListener('click', () => ir('carpa'));
+
+// render animado de cada módulo (video corto hecho en Blender)
+const RENDERS = { bolso: { src: 'render/bolsito.mp4', titulo: 'Bolsito: cómo se arma', nota: 'El 4 va atrás del 1 · el 2 sobre el 1 · el 3 sobre el 2.' } };
+function cerrarRender() { const v = $('#mrVideo'); v.pause(); $('#modalRender').hidden = true; }
+$('#btnRender').addEventListener('click', () => {
+  const r = RENDERS[st.vista]; if (!r) return;
+  const v = $('#mrVideo');
+  if (v.getAttribute('src') !== r.src) v.src = r.src;
+  $('#mrTitulo').textContent = r.titulo; $('#mrNota').textContent = r.nota;
+  $('#modalRender').hidden = false; v.currentTime = 0; v.play().catch(() => {});
+});
+$('#mrCerrar').addEventListener('click', cerrarRender);
+$('#modalRender').addEventListener('click', e => { if (e.target.id === 'modalRender') cerrarRender(); });
 $('#btnAjustes').addEventListener('click', () => { st.desdeCochera = st.vista === 'cochera'; ir('ajustes'); });
 $('#cerrarAjustes').addEventListener('click', () => ir(st.desdeCochera ? 'cochera' : 'piezas'));
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) ir(b.dataset.v); });
