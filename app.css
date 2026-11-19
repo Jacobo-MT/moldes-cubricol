@@ -274,8 +274,8 @@ body.en-inicio { background: #f8fafb; }
 body.en-inicio::before { content: ""; position: fixed; inset: 0; z-index: -1; background-color: #f8fafb;
   background-image: linear-gradient(180deg, #f8fafb00 0%, #f8fafb00 30%, #f8fafb99 58%, #f8fafbf2 82%),
     linear-gradient(90deg, #f8fafbe6 0%, #f8fafb00 38%), url("fondo/carpa-blanca.jpg");
-  background-repeat: no-repeat; background-size: auto, auto, 200vw auto; background-position: 0 0, 0 0, -19vw -6vw; }
-@media (min-width: 600px) { body.en-inicio::before { background-size: auto, auto, 1100px auto; background-position: 0 0, 0 0, calc(50% - 60px) -40px; } }
+  background-repeat: no-repeat; background-size: auto, auto, 135vw auto; background-position: 0 0, 0 0, 6vw -2vw; }
+@media (min-width: 600px) { body.en-inicio::before { background-size: auto, auto, 760px auto; background-position: 0 0, 0 0, calc(50% + 40px) -10px; } }
 #v-inicio { gap: 24px; min-height: calc(100dvh - 40px); align-content: start; }
 .in-hola { position: relative; color: var(--tinta); padding: calc(min(62vw, 300px) + env(safe-area-inset-top)) 0 4px; }
 .in-logo { position: fixed; z-index: 6; top: calc(12px + env(safe-area-inset-top)); right: max(16px, calc(50vw - 264px)); height: 52px; width: auto; }
