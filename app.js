@@ -368,7 +368,11 @@ const RENDERS = {
   bolso: { src: 'render/bolsito.mp4', titulo: 'Bolsito: cómo se arma', nota: 'El 4 va atrás del 1 · el 2 sobre el 1 · el 3 sobre el 2.' },
   tres: { src: 'render/tres-puntas.mp4', titulo: '3 puntas 6 × 3', nota: 'Primero la estructura sola, después con la lona. Arista 245 en todas las piezas.' },
   glamping: { src: 'render/glamping.mp4', titulo: 'Glamping 3 × 3,90', nota: 'Escalera 0,80 + carpa 2,50 + cubo 0,60 = 3,90 m.' },
+  cochera: { src: 'render/cochera.mp4', titulo: 'Cochera 4,70 × 2,25 × 2,27', nota: 'Los 7 arcos se abren y cierran la concha; después, los 6 gajos.' },
 };
+// la plegable (3 × 3 calibrada) tiene el mismo video en todas sus pestañas, menos en la portada
+const R_PLEG = { src: 'render/plegable.mp4', titulo: 'Plegable 3 × 3', nota: 'Primero la estructura sola, después con la lona.' };
+['piezas', 'curva', 'patas', 'lona'].forEach(v => { RENDERS[v] = R_PLEG; });
 function cerrarRender() { const v = $('#mrVideo'); v.pause(); $('#modalRender').hidden = true; }
 $('#btnRender').addEventListener('click', () => {
   const r = RENDERS[st.vista]; if (!r) return;
