@@ -364,7 +364,11 @@ $('#verMoldes').addEventListener('click', () => ir('piezas'));
 $('#pillCarpa').addEventListener('click', () => ir('carpa'));
 
 // render animado de cada módulo (video corto hecho en Blender)
-const RENDERS = { bolso: { src: 'render/bolsito.mp4', titulo: 'Bolsito: cómo se arma', nota: 'El 4 va atrás del 1 · el 2 sobre el 1 · el 3 sobre el 2.' } };
+const RENDERS = {
+  bolso: { src: 'render/bolsito.mp4', titulo: 'Bolsito: cómo se arma', nota: 'El 4 va atrás del 1 · el 2 sobre el 1 · el 3 sobre el 2.' },
+  tres: { src: 'render/tres-puntas.mp4', titulo: '3 puntas 6 × 3', nota: 'Primero la estructura sola, después con la lona. Arista 245 en todas las piezas.' },
+  glamping: { src: 'render/glamping.mp4', titulo: 'Glamping 3 × 3,90', nota: 'Escalera 0,80 + carpa 2,50 + cubo 0,60 = 3,90 m.' },
+};
 function cerrarRender() { const v = $('#mrVideo'); v.pause(); $('#modalRender').hidden = true; }
 $('#btnRender').addEventListener('click', () => {
   const r = RENDERS[st.vista]; if (!r) return;
