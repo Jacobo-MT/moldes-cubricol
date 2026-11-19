@@ -332,11 +332,12 @@ function ir(v) {
   st.vista = v;
   $$('.vista[id^="v-"]').forEach(s => { s.hidden = s.id !== 'v-' + v; });
   $$('#tabs button').forEach(b => { if (b.dataset.v === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-  $('#tabs').hidden = v === 'cochera' || v === 'glamping';
-  $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : `Plegable ${tam()}`;
+  $('#tabs').hidden = v === 'cochera' || v === 'glamping' || v === 'bolso';
+  $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : v === 'bolso' ? 'Bolsito de herramientas' : `Plegable ${tam()}`;
   if (v === 'ajustes') pintarAjustes();
   if (v === 'cochera') pintarCochera(); else if (typeof coParar === 'function') coParar();
   if (v === 'glamping') pintarGlamping(); else if (typeof glParar === 'function') glParar();
+  if (v === 'bolso') pintarBolso(); else if (typeof boParar === 'function') boParar();
   window.scrollTo(0, 0);
 }
 
@@ -452,6 +453,9 @@ function ico3D(tipo) {
       const t0 = Math.PI * k / NA, t1 = Math.PI * (k + 1) / NA, p0 = Math.PI * j / NF, p1 = Math.PI * (j + 1) / NF;
       F.push([pt(t0, p0), pt(t1, p0), pt(t1, p1), pt(t0, p1)]);
     }
+  } else if (tipo === 'bolso') {   // espaldar + bolsillo grande + tira chica, y las herramientas asomando
+    caja(0, 0, 0, 100, 6, 110); caja(6, 6, 0, 94, 24, 70); caja(18, 24, 6, 82, 32, 40);
+    caja(14, 10, 70, 22, 18, 100); caja(52, 12, 70, 72, 22, 84); caja(26, 26, 40, 32, 30, 62); caja(40, 26, 40, 46, 30, 60);
   } else {   // glamping: el perfil de 4 esquinas estirado, más el cubo de atrás
     const P = [[0, 0], [42, 100], [88, 83], [100, 0]], Y = 110;
     for (let i = 0; i < 3; i++) F.push([[P[i][0], 0, P[i][1]], [P[i + 1][0], 0, P[i + 1][1]], [P[i + 1][0], Y, P[i + 1][1]], [P[i][0], Y, P[i][1]]]);
@@ -481,6 +485,6 @@ function ico3D(tipo) {
   caras.forEach(c => { s += `<polygon points="${c.pp.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="${c.col}" stroke="#b9c0c7" stroke-width=".6" stroke-linejoin="round"/>`; });
   return s + '</svg>';
 }
-[['tipoPleg', 'plegable'], ['tipoFija', 'fija'], ['tipoCochera', 'cochera'], ['tipoGlamping', 'glamping']].forEach(([id, t]) => {
+[['tipoPleg', 'plegable'], ['tipoFija', 'fija'], ['tipoCochera', 'cochera'], ['tipoGlamping', 'glamping'], ['tipoBolso', 'bolso']].forEach(([id, t]) => {
   const b = document.getElementById(id), v = b && b.querySelector('svg'); if (v) v.outerHTML = ico3D(t);
 });

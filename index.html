@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Narrow:wght@600;700&display=swap">
-<link rel="stylesheet" href="app.css?v=23">
+<link rel="stylesheet" href="app.css?v=24">
 </head>
 <body>
 
@@ -62,6 +62,10 @@
         <button class="tipo" id="tipoGlamping">
           <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M10 54L40 8L84 18L90 54Z"/></svg>
           <b>Glamping</b><span>campamento</span>
+        </button>
+        <button class="tipo" id="tipoBolso">
+          <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M24 54V10H76V54Z"/></svg>
+          <b>Bolsito</b><span>de herramientas</span>
         </button>
       </div>
       <h2>Tamaño</h2>
@@ -159,6 +163,16 @@
       </div>
     </section>
 
+    <!-- Bolsito de herramientas -->
+    <section class="vista" id="v-bolso" hidden>
+      <nav class="co-pasos" id="boPasos" aria-label="Pasos"></nav>
+      <div class="vista" id="boCuerpo"></div>
+      <div class="acciones">
+        <button class="cta" id="boSig"></button>
+        <button class="sec" id="boAtras">← Paso anterior</button>
+      </div>
+    </section>
+
     <!-- Ajustes -->
     <section class="vista" id="v-ajustes" hidden>
       <h1>Ajustes del taller</h1>
@@ -181,8 +195,9 @@
   </nav>
 </div>
 
-<script src="app.js?v=23"></script>
-<script src="cochera.js?v=23"></script>
-<script src="glamping.js?v=23"></script>
+<script src="app.js?v=24"></script>
+<script src="cochera.js?v=24"></script>
+<script src="glamping.js?v=24"></script>
+<script src="bolso.js?v=24"></script>
 </body>
 </html>
