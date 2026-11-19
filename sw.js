@@ -1,6 +1,6 @@
 // Primero la red (para que siempre llegue la versión nueva); si no hay señal, lo guardado.
-const CACHE = 'moldes-v33';
-const BASE = ['./', 'index.html', 'app.css', 'app.js', 'cochera.js', 'glamping.js', 'bolso.js', 'tres.js', 'manifest.webmanifest', 'icons/logo-claro.png', 'icons/icon-192.png'];
+const CACHE = 'moldes-v34';
+const BASE = ['./', 'index.html', 'app.css', 'app.js', 'cochera.js', 'glamping.js', 'bolso.js', 'tres.js', 'inicio.js', 'manifest.webmanifest', 'icons/logo-claro.png', 'icons/icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASE)).then(() => self.skipWaiting()));

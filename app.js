@@ -332,9 +332,10 @@ function ir(v) {
   st.vista = v;
   $$('.vista[id^="v-"]').forEach(s => { s.hidden = s.id !== 'v-' + v; });
   $$('#tabs button').forEach(b => { if (b.dataset.v === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-  $('#tabs').hidden = v === 'cochera' || v === 'glamping' || v === 'bolso' || v === 'tres';
-  $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : v === 'bolso' ? 'Bolsito' : v === 'tres' ? tpNombre() : `Plegable ${tam()}`;
+  $('#tabs').hidden = v === 'inicio' || v === 'cochera' || v === 'glamping' || v === 'bolso' || v === 'tres';
+  $('#pillCarpa').textContent = v === 'inicio' ? 'Elegir carpa' : v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : v === 'bolso' ? 'Bolsito' : v === 'tres' ? tpNombre() : `Plegable ${tam()}`;
   $('#btnRender').hidden = !RENDERS[v];
+  if (v === 'inicio' && typeof pintarInicio === 'function') pintarInicio();
   if (v === 'ajustes') pintarAjustes();
   if (v === 'cochera') pintarCochera(); else if (typeof coParar === 'function') coParar();
   if (v === 'glamping') pintarGlamping(); else if (typeof glParar === 'function') glParar();
@@ -370,9 +371,9 @@ const RENDERS = {
   glamping: { src: 'render/glamping.mp4', titulo: 'Glamping 3 × 3,90', nota: 'Escalera 0,80 + carpa 2,50 + cubo 0,60 = 3,90 m.' },
   cochera: { src: 'render/cochera.mp4', titulo: 'Cochera 4,70 × 2,25 × 2,27', nota: 'Los 7 arcos se abren y cierran la concha; después, los 6 gajos.' },
 };
-// la plegable (3 × 3 calibrada) tiene el mismo video en todas sus pestañas, menos en la portada
+// la plegable (3 × 3 calibrada) tiene el mismo video en todas sus pestañas
 const R_PLEG = { src: 'render/plegable.mp4', titulo: 'Plegable 3 × 3', nota: 'Primero la estructura sola, después con la lona.' };
-['piezas', 'curva', 'patas', 'lona'].forEach(v => { RENDERS[v] = R_PLEG; });
+['carpa', 'piezas', 'curva', 'patas', 'lona'].forEach(v => { RENDERS[v] = R_PLEG; });
 function cerrarRender() { const v = $('#mrVideo'); v.pause(); $('#modalRender').hidden = true; }
 $('#btnRender').addEventListener('click', () => {
   const r = RENDERS[st.vista]; if (!r) return;
@@ -383,7 +384,7 @@ $('#btnRender').addEventListener('click', () => {
 });
 $('#mrCerrar').addEventListener('click', cerrarRender);
 $('#modalRender').addEventListener('click', e => { if (e.target.id === 'modalRender') cerrarRender(); });
-$('#btnAjustes').addEventListener('click', () => { st.volver = ['cochera', 'glamping', 'bolso', 'tres'].includes(st.vista) ? st.vista : 'piezas'; ir('ajustes'); });
+$('#btnAjustes').addEventListener('click', () => { st.volver = ['inicio', 'cochera', 'glamping', 'bolso', 'tres'].includes(st.vista) ? st.vista : 'piezas'; ir('ajustes'); });
 $('#cerrarAjustes').addEventListener('click', () => ir(st.volver || 'piezas'));
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) ir(b.dataset.v); });
 
@@ -445,7 +446,7 @@ $('#teclado').addEventListener('click', async e => {
     else { $('#pinPuntos').classList.add('mal'); $('#pinError').textContent = 'Clave incorrecta'; setTimeout(() => { pin = ''; pintarPin(); $('#pinPuntos').classList.remove('mal'); }, 400); }
   }
 });
-function abrir() { $('#pin').hidden = true; $('#app').hidden = false; pintar(); ir('carpa'); }
+function abrir() { $('#pin').hidden = true; $('#app').hidden = false; pintar(); ir('inicio'); }
 if (leerLS('ok', false)) abrir(); else $('#pin').hidden = false;
 
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
