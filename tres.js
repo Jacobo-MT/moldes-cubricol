@@ -13,7 +13,7 @@
 // la arista de la estructura (245 en la 6 × 3), en las dos piezas; nada de holgura extra.
 // La curva es la de la 3 × 3 que quedó bien: se hunde 13,5 a 85,5 de la punta (en la 6 × 3 tal cual;
 // en otras medidas, en proporción al largo de la arista). Entre puntas la lona se comba sola: se corta recto.
-const TP_DEF = { L: 600, F: 300, rollo: 153, pataL: 212, pataA: 40, pataB: 14, patas: 4 };
+const TP_DEF = { L: 600, F: 300, arista: 245, rollo: 153, pataL: 212, pataA: 40, pataB: 14, patas: 4 };
 const TP = {
   L: 600, REAL: 594, POSTE: 143.5, ARISTA: 245, ALTO: 335,
   H: Math.sqrt(245 ** 2 - 150 ** 2 - 150 ** 2),
@@ -28,10 +28,19 @@ const nm = v => (v / 100).toLocaleString('es-CO', { maximumFractionDigits: 2 });
 const TP_COL = { largo: '#9cc0ef', culata: '#a6dcae', pata: '#f6c48f', lona: '#eef1fb', sella: '#d9232a', mesa: '#e8dcc4', tubo: '#8d969d', curva: '#2f56c8' };
 
 // ---------- cálculos ----------
+const tpPlano = (L, F) => Math.hypot(L / 4, F / 2);          // de la esquina a la punta, visto desde arriba
+// ¿cierra la carpa con esa arista? La arista tiene que ser más larga que la distancia en el piso, y la punta subir algo.
+function tpCierra(L, F, a) {
+  const pl = tpPlano(L, F);
+  if (a > pl + 20) return '';
+  return `Con una arista de ${n1(a)} la ${nm(L)} × ${nm(F)} no cierra: de la esquina a la punta, en el piso, ya hay ${n1(pl)} cm. Mide la arista de esa estructura y escríbela abajo (tiene que pasar de ${n0(pl + 20)}).`;
+}
 function tpCalcular() {
-  const m = TP.m, s = st.aj.selle, G = st.aj.gola, F = m.F, H = TP.H, L = m.L;
-  const hipGeo = Math.sqrt(H * H + (L / 4) ** 2 + (F / 2) ** 2);
-  const hip = hipGeo;                            // la recta del molde = la arista de la estructura (245 en la 6 × 3)
+  // 19-nov (Andrés): la arista es la medida que manda: 245 siempre, en todas las piezas.
+  // Lo que se acomoda es la altura de la punta: H = √(arista² − (L/4)² − (F/2)²).
+  const m = TP.m, s = st.aj.selle, G = st.aj.gola, F = m.F, L = m.L;
+  const hipGeo = m.arista, H = Math.sqrt(Math.max(1, m.arista ** 2 - tpPlano(L, F) ** 2));
+  const hip = hipGeo;                            // la recta del molde = la arista de la estructura
   const sag = TP.HUNDE * hip / TP.ARISTA;
   const largo = tpLado('largo', `Lado de ${nm(L)} m`, L, L / 2, hip, sag, G, s, m.rollo);
   const culata = tpLado('culata', `Culata (lado de ${nm(F)} m)`, F, 0, hip, sag, G, s, m.rollo);
@@ -183,7 +192,7 @@ function tp3D(g, a, o = {}) {
     return { d: P.reduce((s, p) => s + p[2], 0) / P.length, svg: `<polygon points="${P.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="${tpHex(f.col, k)}" ${op < 1 ? `fill-opacity="${op}" stroke-opacity="${op}"` : ''} stroke="#14181b" stroke-width=".5" stroke-linejoin="round"/>` };
   }).sort((A, B) => A.d - B.d);
   // encuadre fijo para que no salte al girar
-  const Rh = Math.hypot(g.L / 2, g.F / 2) + 40 + (o.ex || 0), zt = TP.H + g.m.pataL;
+  const Rh = Math.hypot(g.L / 2, g.F / 2) + 40 + (o.ex || 0), zt = g.H + g.m.pataL;
   const top = -((zt - c[2]) * ce + Rh * se) - 30, bot = (c[2]) * ce + Rh * se + 20;
   let s = `<svg viewBox="${(-Rh).toFixed(0)} ${top.toFixed(0)} ${(2 * Rh).toFixed(0)} ${(bot - top).toFixed(0)}" role="img" aria-label="La carpa de 3 puntas en 3D">`;
   s += `<ellipse cx="0" cy="${(bot - 30).toFixed(0)}" rx="${(Rh * .8).toFixed(0)}" ry="${(Rh * .12).toFixed(0)}" fill="#14181b" opacity=".07"/>`;
@@ -380,6 +389,9 @@ const TP_ESC = {
         <div class="paso-num"><span class="etq">Fondo (m)</span><div class="stepper"><button data-tpdimd="F" data-d="-0.01" aria-label="Menos fondo">−</button><input data-tpdim="F" type="text" inputmode="decimal" value="${String(m.F / 100).replace('.', ',')}"><button data-tpdimd="F" data-d="0.01" aria-label="Más fondo">+</button></div></div>
       </div>
       ${TP.err ? `<p class="aviso tp-err" role="alert">${TP.err}</p>` : ''}
+      <h2>Arista</h2>
+      <div class="co-tres bo-dos">${tpCampo('arista', 'De la esquina de la pata a la punta (cm)', .5, m.arista)}</div>
+      <p class="nota">Todas las piezas se cortan con esta recta. Con <b>${n1(m.arista)}</b> la punta sube <b>${n1(g.H)}</b> sobre la esquina.</p>
       <h2>Lona</h2>
       <div class="co-tres bo-dos">${tpCampo('rollo', 'Ancho del rollo (cm)', 1, m.rollo)}</div>
       <h2>Patas</h2>
@@ -432,6 +444,7 @@ const tpNombre = () => `3 puntas ${nm(TP.m.L)}×${nm(TP.m.F)}`;
 function pintarTres() {
   tpParar();
   const g = TP.g = tpCalcular();
+  if (!TP.err) TP.err = tpCierra(TP.m.L, TP.m.F, TP.m.arista);   // lo que quedó guardado de antes
   TP.paso = Math.min(Math.max(0, TP.paso), TP_PASOS.length - 1);
   const i = TP.paso, [id] = TP_PASOS[i];
   $('#pillCarpa').textContent = tpNombre();
@@ -563,11 +576,13 @@ function tpTexto(g) {
   return t;
 }
 function tpIr(j) { TP.paso = j; pintarTres(); window.scrollTo(0, 0); }
-const TP_LIM = { rollo: [60, 330], pataL: [100, 320], pataA: [10, 100], pataB: [5, 100], patas: [0, 8] };
+const TP_LIM = { arista: [100, 500], rollo: [60, 330], pataL: [100, 320], pataA: [10, 100], pataB: [5, 100], patas: [0, 8] };
 function tpCambiar(k, v) {
   if (!(v >= 0) || !TP_LIM[k]) return;
   const [a, b] = TP_LIM[k];
-  TP.m[k] = Math.min(b, Math.max(a, k === 'patas' || k === 'rollo' || k === 'pataL' ? Math.round(v) : Math.round(v * 2) / 2));
+  const nuevo = Math.min(b, Math.max(a, k === 'patas' || k === 'rollo' || k === 'pataL' ? Math.round(v) : Math.round(v * 2) / 2));
+  if (k === 'arista') { const e = tpCierra(TP.m.L, TP.m.F, nuevo); TP.err = e; if (e) { const y = window.scrollY; pintarTres(); window.scrollTo(0, y); return; } }
+  TP.m[k] = nuevo;
   if (k === 'rollo' && TP.m.rollo <= st.aj.selle + 20) TP.m.rollo = TP_DEF.rollo;
   guardarLS('tresP', TP.m);
   const y = window.scrollY, f = TP.f; pintarTres(); window.scrollTo(0, y); if (TP.esc) tpCuadro(f);
@@ -578,7 +593,7 @@ $('#v-tres').addEventListener('click', async e => {
   if (b.dataset.paso) return tpIr(+b.dataset.paso);
   if (b.id === 'tpAtras') return tpIr(TP.paso - 1);
   if (b.id === 'tpSig') return tpIr(TP.paso + 1);
-  if (b.dataset.tpmed) { const [L, F] = b.dataset.tpmed.split('x').map(Number); TP.err = ''; TP.m.L = L; TP.m.F = F; guardarLS('tresP', TP.m); const y = window.scrollY; pintarTres(); window.scrollTo(0, y); return; }
+  if (b.dataset.tpmed) { const [L, F] = b.dataset.tpmed.split('x').map(Number); TP.err = tpCierra(L, F, TP.m.arista); if (!TP.err) { TP.m.L = L; TP.m.F = F; } guardarLS('tresP', TP.m); const y = window.scrollY; pintarTres(); window.scrollTo(0, y); return; }
   if (b.dataset.tpdimd) return tpMedida(b.dataset.tpdimd, TP.m[b.dataset.tpdimd] / 100 + parseFloat(b.dataset.d));
   if (b.dataset.tp) return tpCambiar(b.dataset.tp, TP.m[b.dataset.tp] + parseFloat(b.dataset.d));
   if (b.dataset.tplado) { TP.lado = +b.dataset.tplado; return tpPintarCurva(); }
@@ -607,7 +622,11 @@ function tpMedida(k, v) {
   if (!(v > 0)) TP.err = `${nombre} no es un número válido.`;
   else if (v * 100 > TP.MAX + 1e-6) TP.err = `${nombre} no puede pasar de ${TP.MAX / 100} m: la 3 puntas llega hasta 6 × 6. Más grande, el peso de la lona tumba la estructura.`;
   else if (v * 100 < TP.MIN - 1e-6) TP.err = `${nombre} debe ser de al menos ${TP.MIN / 100} m.`;
-  else { TP.err = ''; TP.m[k] = Math.round(v * 100); guardarLS('tresP', TP.m); }
+  else {
+    const L = k === 'L' ? Math.round(v * 100) : TP.m.L, F = k === 'F' ? Math.round(v * 100) : TP.m.F;
+    TP.err = tpCierra(L, F, TP.m.arista);
+    if (!TP.err) { TP.m[k] = Math.round(v * 100); guardarLS('tresP', TP.m); }
+  }
   const y = window.scrollY; pintarTres(); window.scrollTo(0, y);
 }
 $('#tipoTres').addEventListener('click', () => ir('tres'));
