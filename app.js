@@ -332,10 +332,12 @@ function ir(v) {
   st.vista = v;
   $$('.vista[id^="v-"]').forEach(s => { s.hidden = s.id !== 'v-' + v; });
   $$('#tabs button').forEach(b => { if (b.dataset.v === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-  $('#tabs').hidden = v === 'inicio' || v === 'cochera' || v === 'glamping' || v === 'bolso' || v === 'tres';
-  $('#pillCarpa').textContent = v === 'inicio' ? 'Elegir carpa' : v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : v === 'bolso' ? 'Bolsito' : v === 'tres' ? tpNombre() : `Plegable ${tam()}`;
+  $('#tabs').hidden = v === 'inicio' || v === 'proyectos' || v === 'cochera' || v === 'glamping' || v === 'bolso' || v === 'tres';
+  $('#pillCarpa').textContent = v === 'inicio' || v === 'proyectos' ? 'Elegir carpa' : v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : v === 'bolso' ? 'Bolsito' : v === 'tres' ? tpNombre() : `Plegable ${tam()}`;
   $('#btnRender').hidden = !RENDERS[v];
+  document.body.classList.toggle('en-inicio', v === 'inicio');
   if (v === 'inicio' && typeof pintarInicio === 'function') pintarInicio();
+  if (v === 'proyectos' && typeof pintarProyectos === 'function') pintarProyectos();
   if (v === 'ajustes') pintarAjustes();
   if (v === 'cochera') pintarCochera(); else if (typeof coParar === 'function') coParar();
   if (v === 'glamping') pintarGlamping(); else if (typeof glParar === 'function') glParar();

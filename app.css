@@ -266,34 +266,39 @@ svg .cae { animation: coCae 1.4s cubic-bezier(.3,.7,.4,1) both; }
 .mr-caja video { width: 100%; aspect-ratio: 1; border-radius: 12px; background: #d9dcdf; display: block; }
 .mr-nota { margin: 0; text-align: center; font-weight: 700; color: var(--grafito); }
 
-/* ===== inicio ===== */
+/* ===== inicio: foto real difuminada de fondo, logo en la esquina, botones uno debajo del otro ===== */
 .barra-logo { cursor: pointer; }
-#v-inicio { gap: 22px; }
-.in-hola { margin: -20px max(-16px, calc(-1 * env(safe-area-inset-left) - 16px)) 0; padding: 26px 20px 30px; color: #fff;
-  background: radial-gradient(120% 140% at 100% 0%, #2c5aa0 0%, #1d3f78 45%, var(--tinta) 100%); border-radius: 0 0 26px 26px; position: relative; overflow: hidden; }
-.in-hola::after { content: ""; position: absolute; right: -30px; bottom: -8px; width: 210px; height: 120px; opacity: .16;
-  background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 60'%3E%3Cpath d='M4 58V36L24 10L50 30L76 10L96 36V58Z' fill='white'/%3E%3C/svg%3E"); }
-.in-hola h1 { font-size: 2rem; line-height: 1.1; }
-.in-hola #inSaludo { color: #ffb3b5; }
-.in-fecha { margin: 0 0 6px; font-size: .85rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #ffffffb0; }
-.in-mods { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.in-mod { position: relative; display: grid; align-content: start; gap: 4px; text-align: left; min-height: 150px; padding: 16px 14px; border: 0; border-radius: 18px; color: #fff;
-  box-shadow: 0 6px 16px #14181b26; transition: transform .15s; }
-.in-mod:active { transform: scale(.97); }
-.in-mod svg { width: 38px; height: 38px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; margin-bottom: 8px; }
+body.en-inicio .barra { display: none; }
+body.en-inicio { background: var(--tinta); }
+body.en-inicio::before { content: ""; position: fixed; inset: -20px; z-index: -1;
+  background: linear-gradient(180deg, #14181b8c 0, #14181b14 14vw, #14181b26 50vw, #14181bcc 72vw, var(--tinta) 88vw),
+    center top / 100% auto no-repeat url("fondo/carpa-3x3.jpg"), var(--tinta); }
+@media (min-width: 600px) { body.en-inicio::before { background-image: linear-gradient(180deg, #14181b8c 0, #14181b14 90px, #14181b26 300px, #14181bcc 430px, var(--tinta) 530px), url("fondo/carpa-3x3.jpg"); background-size: auto, 600px auto; } }
+.in-fecha { margin-top: min(56vw, 300px); }
+#v-inicio { gap: 26px; min-height: calc(100dvh - 40px); align-content: start; }
+.in-hola { position: relative; color: #fff; padding: calc(28px + env(safe-area-inset-top)) 0 4px; }
+.in-logo { position: absolute; top: calc(4px + env(safe-area-inset-top)); right: 0; height: 52px; width: auto; filter: drop-shadow(0 2px 6px #0008); }
+.in-hola h1 { font-size: 2.15rem; line-height: 1.08; margin-top: 46px; text-shadow: 0 2px 14px #000a; }
+.in-hola #inSaludo { color: #ff9ea1; }
+.in-fecha { margin: min(56vw, 300px) 0 0; font-size: .85rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #ffffffcc; text-shadow: 0 1px 6px #000a; }
+.in-fecha + h1 { margin-top: 6px; }
+.in-mods { display: grid; gap: 12px; }
+.in-mod { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 16px 16px; border: 0; border-radius: 16px; color: #fff;
+  box-shadow: 0 8px 22px #0006; transition: transform .15s; }
+.in-mod:active { transform: scale(.98); }
+.in-mod svg { flex: none; width: 46px; height: 46px; padding: 9px; border-radius: 12px; background: #ffffff24; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.in-mod div { flex: 1; display: grid; gap: 2px; min-width: 0; }
 .in-mod b { font-size: 1.15rem; line-height: 1.15; }
-.in-mod span { font-size: .85rem; opacity: .85; line-height: 1.3; }
-.in-mod em { position: absolute; top: 12px; right: 12px; font-style: normal; font-size: .72rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
-  padding: 3px 8px; border-radius: 999px; background: #ffffff2e; }
+.in-mod span { font-size: .86rem; opacity: .85; line-height: 1.3; }
+.in-mod i { font-style: normal; font-size: 2rem; line-height: 1; opacity: .8; }
+.in-mod em { flex: none; font-style: normal; font-size: .7rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; background: #ffffff2e; }
 .in-mod[aria-disabled=true] { filter: saturate(.55); }
 .in-mod.nada { animation: temblar .35s; }
-.in-rojo { background: linear-gradient(150deg, #e8343b, var(--rojo) 60%, #a5161c); }
-.in-azul { background: linear-gradient(150deg, #3a6cbc, #2c5aa0 60%, #1d3f78); }
-.in-tinta { background: linear-gradient(150deg, #39444b, var(--tinta)); }
-.in-lona { background: var(--hoja); color: var(--tinta); box-shadow: 0 0 0 2px var(--linea) inset, 0 6px 16px #14181b14; }
-.in-lona svg { color: #2c5aa0; }
-.in-cab { display: flex; align-items: baseline; justify-content: space-between; scroll-margin-top: 80px; padding-top: 4px; border-top: 2px solid var(--linea); }
-.in-cab h2 { font-size: 1.4rem; margin-top: 14px; }
+.in-rojo { background: linear-gradient(120deg, #e8343b, var(--rojo) 55%, #a5161c); }
+.in-azul { background: linear-gradient(120deg, #3a6cbc, #2c5aa0 55%, #1d3f78); }
+.in-tinta { background: linear-gradient(120deg, #4a565e, #262d32); }
+.in-lona { background: #ffffffee; color: var(--tinta); }
+.in-lona svg { color: #2c5aa0; background: var(--azul-suave); }
 .in-lista { display: grid; gap: 16px; }
 .in-proy { background: var(--hoja); border-radius: 18px; overflow: hidden; box-shadow: 0 4px 14px #14181b14; }
 .in-foto { position: relative; display: block; width: 100%; padding: 0; border: 0; background: #d9dcdf; }
@@ -310,4 +315,3 @@ svg .cae { animation: coCae 1.4s cubic-bezier(.3,.7,.4,1) both; }
 .in-btn { border: 0; border-radius: 12px; background: var(--tinta); color: #fff; font-weight: 800; padding: 11px 20px; }
 .in-btn.sec { background: var(--azul-suave); color: var(--tinta); }
 .in-real { font-size: .85rem; font-weight: 600; color: var(--gris); padding: 8px 12px; border-radius: 10px; border: 2px dashed var(--linea); }
-.in-pie { text-align: center; }

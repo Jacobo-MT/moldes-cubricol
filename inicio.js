@@ -33,14 +33,17 @@ function saludo() {
 }
 
 function pintarInicio() {
+  document.body.classList.add('en-inicio');
   const hoy = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
   $('#inSaludo').textContent = saludo();
   $('#inFecha').textContent = hoy.charAt(0).toUpperCase() + hoy.slice(1);
   $('#inModulos').innerHTML = MODULOS.map(m => `
     <button class="in-mod in-${m.c}" data-mod="${m.id}" ${m.listo ? '' : 'aria-disabled="true"'}>
       <svg viewBox="0 0 24 24" aria-hidden="true">${m.ico}</svg>
-      <b>${m.t}</b><span>${m.d}</span>${m.listo ? '' : '<em>Pronto</em>'}
+      <div><b>${m.t}</b><span>${m.d}</span></div>${m.listo ? '<i aria-hidden="true">›</i>' : '<em>Pronto</em>'}
     </button>`).join('');
+}
+function pintarProyectos() {
   $('#inProyectos').innerHTML = PROYECTOS.map(p => `
     <article class="in-proy">
       <button class="in-foto" data-render="${p.render}" aria-label="Ver el render de ${p.nombre}">
@@ -66,15 +69,17 @@ function verRender(clave) {
   $('#modalRender').hidden = false; v.currentTime = 0; v.play().catch(() => {});
 }
 
-$('#v-inicio').addEventListener('click', e => {
+const clicInicio = e => {
   const m = e.target.closest('[data-mod]'), r = e.target.closest('[data-render]'), i = e.target.closest('[data-ir]');
   if (m) {
     const id = m.dataset.mod;
     if (id === 'cortes') ir('carpa');
-    else if (id === 'catalogo') $('#inCatalogo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else if (id === 'catalogo') ir('proyectos');
     else { m.classList.remove('nada'); void m.offsetWidth; m.classList.add('nada'); }
   } else if (r) verRender(r.dataset.render);
   else if (i) ir(i.dataset.ir);
-});
+};
+$('#v-inicio').addEventListener('click', clicInicio);
+$('#v-proyectos').addEventListener('click', clicInicio);
 $('.barra-logo').addEventListener('click', () => ir('inicio'));
 if (st.vista === 'inicio') pintarInicio();
