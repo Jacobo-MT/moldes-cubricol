@@ -604,6 +604,28 @@ function coTubo(g, u) {
   }
   return s + '</svg>';
 }
+// Ancho del gajo en la mitad, de dónde sale: tubo a tubo (recto) + comba de la lona + selle
+function coAnchoMitad(g) {
+  const tip = ar => [ar.y0 + g.R * Math.sin(ar.th), ar.z0 + g.R * Math.cos(ar.th)];
+  const a0 = g.arcos[g.N], a1 = g.arcos[g.N - 1];   // el del centro (0°) y el siguiente, del lado de adelante
+  const p0 = tip(a0), p1 = tip(a1), cuerda = d2(p0, p1);
+  const neto = 2 * Math.max(...g.molde.arriba.map(p => p[1])), corte = g.normal.ancho;
+  return { puntas: [p0, p1], cuerda, neto, comba: neto - cuerda, selle: corte - neto, corte };
+}
+function coAnchoGajo(g) {
+  const an = coAnchoMitad(g), W = 440, H = 250, x0 = 70, x1 = 370, yT = 120;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ancho del gajo en la mitad">${FL}`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#eef1fb"/>`;
+  // lona: sube un poco entre los tubos (la comba) y pasa 1,5 más allá de cada tubo para el selle
+  s += `<path d="M${x0 - 26} ${yT - 9} L${x0} ${yT - 9} Q${(x0 + x1) / 2} ${yT - 40} ${x1} ${yT - 9} L${x1 + 26} ${yT - 9}" fill="none" stroke="#5462b4" stroke-width="6" stroke-linecap="round"/>`;
+  s += `<path d="M${x0 - 26} ${yT - 9} L${x0} ${yT - 9}" stroke="#d9232a" stroke-width="6"/><path d="M${x1} ${yT - 9} L${x1 + 26} ${yT - 9}" stroke="#d9232a" stroke-width="6"/>`;
+  [x0, x1].forEach(x => { s += `<circle cx="${x}" cy="${yT}" r="9" fill="#9aa3a9" stroke="#39444b" stroke-width="2"/>`; });
+  s += `<g class="ap">${flecha(x0, yT + 30, x1, yT + 30)}<text x="${(x0 + x1) / 2}" y="${yT + 58}" font-size="22" text-anchor="middle" class="co-cota">${n1(an.cuerda)} de tubo a tubo (recto)</text></g>`;
+  s += `<g class="ap" style="--d:.8s"><text x="${(x0 + x1) / 2}" y="${yT - 48}" font-size="18" text-anchor="middle" class="azul">+ ${n1(an.comba)} que la lona se comba</text></g>`;
+  s += `<g class="ap" style="--d:1.4s"><text x="${x0 - 13}" y="${yT - 22}" font-size="16" text-anchor="middle" class="rojo">+${n1(an.selle / 2)}</text><text x="${x1 + 13}" y="${yT - 22}" font-size="16" text-anchor="middle" class="rojo">+${n1(an.selle / 2)}</text></g>`;
+  s += `<g class="ap" style="--d:2s"><text x="${W / 2}" y="${H - 26}" font-size="24" text-anchor="middle" class="co-cota">= ${n1(an.corte)} de corte (${n1(an.corte / 2)} a cada lado)</text></g>`;
+  return s + '</svg>';
+}
 function coAbanico(g) {
   const R = g.R, ext = R + g.d + g.Lm / 2, W = 2 * ext + 160, H = R + 150, X = y => W / 2 + y, Y = z => H - 90 - z;
   const gira = g.arcos.filter(ar => ar.gira), tip = ar => [ar.y0 + R * Math.sin(ar.th), ar.z0 + R * Math.cos(ar.th)];
@@ -615,9 +637,9 @@ function coAbanico(g) {
     s += `<line class="ap" ${d} x1="${X(ar.y0)}" y1="${Y(ar.z0)}" x2="${X(x)}" y2="${Y(z)}" stroke="#d9232a" stroke-width="5" stroke-linecap="round"/>`;
     s += `<text class="ap" ${d} x="${X(ar.y0 + (x - ar.y0) * 1.13)}" y="${Y(ar.z0 + (z - ar.z0) * 1.13) + 8}" font-size="24" text-anchor="middle">${grados(ar.th)}°</text>`;
   });
-  const c0 = gira.find(ar => Math.abs(ar.th + g.dTh) < 1e-6) || gira[0];
-  const Ra = R * .84, oy = c0.y0, oz = c0.z0, t1 = -g.dTh / 2;
-  s += `<g class="ap" style="--d:2s"><path d="M${X(oy + Ra * Math.sin(-g.dTh))} ${Y(oz + Ra * Math.cos(-g.dTh))} A${Ra} ${Ra} 0 0 1 ${X(oy)} ${Y(oz + Ra)}" fill="none" stroke="#14181b" stroke-width="2.5" marker-start="url(#fl2)" marker-end="url(#fl2)"/><text x="${X(oy + R * .7 * Math.sin(t1))}" y="${Y(oz + R * .7 * Math.cos(t1))}" font-size="26" text-anchor="middle" class="co-cota">${n0(R * g.dTh)}</text></g>`;
+  // distancia REAL entre las puntas de los dos arcos del medio (cada uno en su tornillo), en línea recta: lo que da el metro
+  const an = coAnchoMitad(g), [p0, p1] = an.puntas, a0 = [p0[0], p0[1] - 22], a1 = [p1[0], p1[1] - 22];
+  s += `<g class="ap" style="--d:2s">${flecha(X(a1[0]), Y(a1[1]), X(a0[0]), Y(a0[1]), '#14181b', 2.5)}<text x="${X((a0[0] + a1[0]) / 2) + 14}" y="${Y((a0[1] + a1[1]) / 2) + 34}" font-size="26" text-anchor="middle" class="co-cota">${n1(an.cuerda)}</text></g>`;
   gira.forEach(ar => { s += `<circle cx="${X(ar.y0)}" cy="${Y(ar.z0)}" r="5" fill="#d9232a" stroke="#fff" stroke-width="1.5"/>`; });
   s += `<line x1="0" y1="${Y(0)}" x2="${W}" y2="${Y(0)}" stroke="#39444b" stroke-width="3"/>`;
   s += `<g class="ap" style="--d:2.4s">${flecha(X(-ext), Y(-22), X(ext), Y(-22))}<text x="${X(0)}" y="${Y(-22) + 30}" font-size="26" text-anchor="middle" class="co-cota">abierta ${n0(2 * ext)}</text></g>`;
@@ -714,7 +736,7 @@ const CO_ESC = {
   arcos: g => ({ titulo: 'Los arcos', cuadros: [
     { t: `Un tubo de ${B(n1(g.arco.P))} se dobla así.`, anim: { dur: 2600, f: u => coTubo(g, u) } },
     { t: `Haz ${B(g.arcos.length + ' arcos')} iguales.`, svg: () => coTubo(g, 1) },
-    { t: `Abiertos en abanico, cada ${B(grados(g.dTh) + '°')}.`, svg: () => coAbanico(g) },
+    { t: `Abiertos en abanico, cada ${B(grados(g.dTh) + '°')}. Arriba, de tubo a tubo en línea recta, hay ${B(n1(coAnchoMitad(g).cuerda))}.`, svg: () => coAbanico(g) },
     { t: `De cerca: cada arco gira en ${B('su propio tornillo')} de la platina.`, anim: { dur: 4000, f: u => coBisagraLado(g, { u: Math.sin(u * Math.PI), quieto: true }) } },
     ...(g.hc === 0 ? [{ t: g.d > 0 ? `El del centro va ${B(n0(CO_PLACA) + ' cm')} arriba; los de afuera bajan y se corren hasta ${B(n0(g.d) + ' cm')}.` : `Los tornillos van a ${B(n0(CO_PLACA) + ' cm')} del piso.`, svg: () => coBisagraLado(g, { u: 0, cotas: true }) }] : []),
     { t: g.hc > 0 ? `Bisagra a ${B(n0(g.hc) + ' cm')} del piso, en la mitad.` : 'Una bisagra a cada lado, en la mitad del largo.', svg: () => co3D(g, { lona: false, etiquetas: [[[g.a + 20, g.yA, g.hc + 20], 'bisagra', 'rojo']] }) },
@@ -732,6 +754,7 @@ const CO_ESC = {
       { t: `Con el metro, una rayita cada ${B('20 cm')}.`, svg: () => coMesa(g, 3) },
       { t: 'En cada rayita: escuadra y marca a cada lado.', svg: () => coEscuadra(g) },
       { t: `Medidas de cada rayita. Ya traen ${B(n1(st.aj.selle / 2) + ' cm')} para sellar en cada borde.`, svg: () => coMedidasGajo(g, false), alto: true },
+      { t: `¿Por qué ${B(n1(g.normal.ancho))} en la mitad? Tubo a tubo + lo que la lona se comba + el selle.`, svg: () => coAnchoGajo(g) },
       { t: `Cada borde mide ${B(n1(g.borde))}, lo mismo que el tubo (${n1(g.arco.P)}). La línea del centro mide menos (${n1(g.normal.Lc)}) porque va por la lona, entre dos tubos.`, svg: () => coLargos(g), alto: true },
       { t: 'Así quedan los puntos.', svg: () => coMesa(g, 4) },
       { t: `Une los puntos con una ${B('regla flexible')}.`, svg: () => coMesa(g, 5) },
