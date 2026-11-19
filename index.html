@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Narrow:wght@600;700&display=swap">
-<link rel="stylesheet" href="app.css?v=26">
+<link rel="stylesheet" href="app.css?v=27">
 </head>
 <body>
 
@@ -51,6 +51,10 @@
         <button class="tipo activo" id="tipoPleg">
           <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M8 52V34Q30 30 50 6Q70 30 92 34V52Z"/></svg>
           <b>Plegable</b><span>con curva</span>
+        </button>
+        <button class="tipo" id="tipoTres">
+          <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M4 52V36L24 12L50 30L76 12L96 36V52Z"/></svg>
+          <b>3 puntas</b><span>plegable 6 m</span>
         </button>
         <button class="tipo" id="tipoFija" disabled>
           <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M8 52V34L50 8L92 34V52Z"/></svg>
@@ -174,6 +178,16 @@
       </div>
     </section>
 
+    <!-- Plegable de 3 puntas -->
+    <section class="vista" id="v-tres" hidden>
+      <nav class="co-pasos" id="tpPasos" aria-label="Pasos"></nav>
+      <div class="vista" id="tpCuerpo"></div>
+      <div class="acciones">
+        <button class="cta" id="tpSig"></button>
+        <button class="sec" id="tpAtras">← Paso anterior</button>
+      </div>
+    </section>
+
     <!-- Ajustes -->
     <section class="vista" id="v-ajustes" hidden>
       <h1>Ajustes del taller</h1>
@@ -205,9 +219,10 @@
   </div>
 </div>
 
-<script src="app.js?v=26"></script>
-<script src="cochera.js?v=26"></script>
-<script src="glamping.js?v=26"></script>
-<script src="bolso.js?v=26"></script>
+<script src="app.js?v=27"></script>
+<script src="cochera.js?v=27"></script>
+<script src="glamping.js?v=27"></script>
+<script src="bolso.js?v=27"></script>
+<script src="tres.js?v=27"></script>
 </body>
 </html>

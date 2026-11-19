@@ -250,6 +250,8 @@ svg .cae { animation: coCae 1.4s cubic-bezier(.3,.7,.4,1) both; }
 
 /* bolsito */
 .bo-dos { grid-template-columns: repeat(2, 1fr); }
+.tp-fondos { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.tp-fondos b { font-size: 1.25rem; }
 #boCuerpo h2 { margin: 6px 0 -4px; font-size: 1.05rem; }
 .gl-leyenda .bo-em { font-style: normal; display: inline; text-align: center; }
 

@@ -332,13 +332,14 @@ function ir(v) {
   st.vista = v;
   $$('.vista[id^="v-"]').forEach(s => { s.hidden = s.id !== 'v-' + v; });
   $$('#tabs button').forEach(b => { if (b.dataset.v === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-  $('#tabs').hidden = v === 'cochera' || v === 'glamping' || v === 'bolso';
-  $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : v === 'bolso' ? 'Bolsito' : `Plegable ${tam()}`;
+  $('#tabs').hidden = v === 'cochera' || v === 'glamping' || v === 'bolso' || v === 'tres';
+  $('#pillCarpa').textContent = v === 'cochera' ? cocheraNombre() : v === 'glamping' ? 'Glamping 3 × 3,90' : v === 'bolso' ? 'Bolsito' : v === 'tres' ? tpNombre() : `Plegable ${tam()}`;
   $('#btnRender').hidden = !RENDERS[v];
   if (v === 'ajustes') pintarAjustes();
   if (v === 'cochera') pintarCochera(); else if (typeof coParar === 'function') coParar();
   if (v === 'glamping') pintarGlamping(); else if (typeof glParar === 'function') glParar();
   if (v === 'bolso') pintarBolso(); else if (typeof boParar === 'function') boParar();
+  if (v === 'tres') pintarTres(); else if (typeof tpParar === 'function') tpParar();
   window.scrollTo(0, 0);
 }
 
@@ -374,8 +375,8 @@ $('#btnRender').addEventListener('click', () => {
 });
 $('#mrCerrar').addEventListener('click', cerrarRender);
 $('#modalRender').addEventListener('click', e => { if (e.target.id === 'modalRender') cerrarRender(); });
-$('#btnAjustes').addEventListener('click', () => { st.desdeCochera = st.vista === 'cochera'; ir('ajustes'); });
-$('#cerrarAjustes').addEventListener('click', () => ir(st.desdeCochera ? 'cochera' : 'piezas'));
+$('#btnAjustes').addEventListener('click', () => { st.volver = ['cochera', 'glamping', 'bolso', 'tres'].includes(st.vista) ? st.vista : 'piezas'; ir('ajustes'); });
+$('#cerrarAjustes').addEventListener('click', () => ir(st.volver || 'piezas'));
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) ir(b.dataset.v); });
 
 // curva
@@ -459,6 +460,18 @@ function ico3D(tipo) {
       const N = 6, M = 4, pt = (s, t) => { const ex = a[0] + (b[0] - a[0]) * s, ey = a[1] + (b[1] - a[1]) * s; return [ex + (ap[0] - ex) * t, ey + (ap[1] - ey) * t, zT + (ap[2] - zT) * t - curva * Math.sin(Math.PI * t) * (0.75 + 0.25 * Math.sin(Math.PI * s))]; };   // techo cóncavo, también en las aristas
       for (let s = 0; s < N; s++) for (let t = 0; t < M; t++) F.push([pt(s / N, t / M), pt((s + 1) / N, t / M), pt((s + 1) / N, (t + 1) / M), pt(s / N, (t + 1) / M)]);
     }
+  } else if (tipo === 'tres') {   // 6 × 3 con 3 puntas en fila
+    const L = 150, D = 75, zG = 60, zT = 70, Hp = 34;
+    [[0, 0], [L - 3, 0], [L - 3, D - 3], [0, D - 3], [L / 2 - 1.5, 0], [L / 2 - 1.5, D - 3]].forEach(([x, y]) => caja(x, y, 0, x + 3, y + 3, zG));
+    const top = (x, y, z) => [x, y, z];
+    F.push([top(0, 0, zG), top(L, 0, zG), top(L, 0, zT), top(0, 0, zT)], [top(0, 0, zG), top(0, D, zG), top(0, D, zT), top(0, 0, zT)]);
+    const N = 9, M = 3;
+    [0, D].forEach(yb => { for (let i = 0; i < N; i++) for (let j = 0; j < M; j++) {
+      const pt = (s, t) => { const xb = s * L, xt = L / 4 + s * L / 2, x = xb + (xt - xb) * t; return [x, yb + (D / 2 - yb) * t, zT + Hp * t - (xt > L / 4 && xt < 3 * L / 4 ? 5 * Math.abs(Math.sin(Math.PI * (xt - L / 4) / (L / 4))) : 0) * t * t - 5 * Math.sin(Math.PI * t)]; };
+      F.push([pt(i / N, j / M), pt((i + 1) / N, j / M), pt((i + 1) / N, (j + 1) / M), pt(i / N, (j + 1) / M)]); } });
+    [[0, L / 4], [L, 3 * L / 4]].forEach(([xb, xt]) => { for (let i = 0; i < 4; i++) for (let j = 0; j < M; j++) {
+      const pt = (s, t) => [xb + (xt - xb) * t, s * D + (D / 2 - s * D) * t, zT + Hp * t - 5 * Math.sin(Math.PI * t)];
+      F.push([pt(i / 4, j / M), pt((i + 1) / 4, j / M), pt((i + 1) / 4, (j + 1) / M), pt(i / 4, (j + 1) / M)]); } });
   } else if (tipo === 'cochera') {
     // concha cerrada: arcos que giran en la bisagra de cada lado; los de las puntas bajan hasta el piso
     const Rx = 78, Rz = 62, Wy = 50, NA = 8, NF = 14;
@@ -499,6 +512,6 @@ function ico3D(tipo) {
   caras.forEach(c => { s += `<polygon points="${c.pp.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="${c.col}" stroke="#b9c0c7" stroke-width=".6" stroke-linejoin="round"/>`; });
   return s + '</svg>';
 }
-[['tipoPleg', 'plegable'], ['tipoFija', 'fija'], ['tipoCochera', 'cochera'], ['tipoGlamping', 'glamping'], ['tipoBolso', 'bolso']].forEach(([id, t]) => {
+[['tipoPleg', 'plegable'], ['tipoTres', 'tres'], ['tipoFija', 'fija'], ['tipoCochera', 'cochera'], ['tipoGlamping', 'glamping'], ['tipoBolso', 'bolso']].forEach(([id, t]) => {
   const b = document.getElementById(id), v = b && b.querySelector('svg'); if (v) v.outerHTML = ico3D(t);
 });
