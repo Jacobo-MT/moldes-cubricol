@@ -11,26 +11,28 @@
 // arriba se sellan entre sí en línea recta de punta a punta) y 2 culatas (triángulos).
 // Las aristas (punta → esquina) llevan la misma curva de la plegable 3 × 3 que quedó bien,
 // en proporción a su largo (REF, K, U0, BETA de app.js). Entre puntas la lona se comba sola: se corta recto.
-const TP_DEF = { F: 300, rollo: 153, pataL: 212, pataA: 40, pataB: 14, patas: 4 };
+const TP_DEF = { L: 600, F: 300, rollo: 153, pataL: 212, pataA: 40, pataB: 14, patas: 4 };
 const TP = {
   L: 600, REAL: 594, POSTE: 143.5, ARISTA: 245, ALTO: 335,
   H: Math.sqrt(245 ** 2 - 150 ** 2 - 150 ** 2),
-  FONDOS: [200, 300, 400, 500, 600],
+  RAPIDAS: [[600, 200], [600, 300], [600, 400], [600, 500], [600, 600]],
+  MIN: 100, MAX: 600, err: '',
   m: { ...TP_DEF, ...leerLS('tresP', {}) },
   f: 0, juega: false, timer: 0, raf: 0, paso: leerLS('tresPaso', 0), esc: null, g: null,
   puntos: leerLS('tresPuntos', null), d: 85.5, lado: 0, arrastra: false,
 };
+const nm = v => (v / 100).toLocaleString('es-CO', { maximumFractionDigits: 2 });   // metros con centímetros: 3,14
 const TP_COL = { largo: '#9cc0ef', culata: '#a6dcae', pata: '#f6c48f', lona: '#eef1fb', sella: '#d9232a', mesa: '#e8dcc4', tubo: '#8d969d', curva: '#2f56c8' };
 
 // ---------- cálculos ----------
 function tpCalcular() {
-  const m = TP.m, s = st.aj.selle, G = st.aj.gola, F = m.F, H = TP.H, L = TP.L;
+  const m = TP.m, s = st.aj.selle, G = st.aj.gola, F = m.F, H = TP.H, L = m.L;
   const hipGeo = Math.sqrt(H * H + (L / 4) ** 2 + (F / 2) ** 2);
   const hip = K * hipGeo;                        // como la plegable: la lona sale un poco más grande que la línea
   const sag = REF.sag * hip / HIP0;
-  const largo = tpLado('largo', 'Lado de 6 m', L, L / 2, hip, sag, G, s, m.rollo);
-  const culata = tpLado('culata', `Culata (lado de ${n1(F / 100)} m)`, F, 0, hip, sag, G, s, m.rollo);
-  const g = { m, s, G, F, H, L, hipGeo, hip, sag, lados: [largo, culata], patasMedio: F >= 500 };
+  const largo = tpLado('largo', `Lado de ${nm(L)} m`, L, L / 2, hip, sag, G, s, m.rollo);
+  const culata = tpLado('culata', `Culata (lado de ${nm(F)} m)`, F, 0, hip, sag, G, s, m.rollo);
+  const g = { m, s, G, F, H, L, q: L / 4, hipGeo, hip, sag, lados: [largo, culata], patasMedio: F >= 500 };
   // piezas numeradas: cada franja de cada lado, y las patas
   let n = 1;
   g.piezas = [];
@@ -125,28 +127,28 @@ function tpAcomodar(g) {
 // ---------- 3D de la carpa ----------
 const tpHex = (h, k) => { const n = parseInt(h.slice(1), 16), c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => Math.round(Math.min(255, v * k))); return `rgb(${c.join(',')})`; };
 function tpModelo(g, o = {}) {
-  const F = [], L = TP.L, P = g.m.pataL, H = g.H, D = g.F, Gv = g.G - st.aj.varilla, Z = P;
+  const F = [], L = g.L, q = g.q, P = g.m.pataL, H = g.H, D = g.F, Gv = g.G - st.aj.varilla, Z = P;
   const col = k => o.col ? TP_COL[k] : TP_COL.lona;
   const ex = o.ex || 0;
-  const valle = x => (x > 150 && x < 450) ? 9 * Math.abs(Math.sin(Math.PI * (x - 150) / 150)) : 0;   // la comba entre puntas (solo dibujo)
+  const valle = x => (x > q && x < 3 * q) ? 9 * Math.abs(Math.sin(Math.PI * (x - q) / q)) : 0;   // la comba entre puntas (solo dibujo)
   const N = 10, M = 5;
   // lados de 6 m
   [0, 1].forEach(lado => {
     const yb = lado ? D : 0, yt = D / 2, dy = lado ? ex : -ex;
-    const pt = (s, t) => { const xb = s * L, xt = 150 + s * 300, x = xb + (xt - xb) * t; return [x, yb + (yt - yb) * t + dy, Z + H * t - valle(xt) * t * t - 6 * Math.sin(Math.PI * t) * (s < .25 || s > .75 ? 1 : 0.4)]; };
+    const pt = (s, t) => { const xb = s * L, xt = q + s * 2 * q, x = xb + (xt - xb) * t; return [x, yb + (yt - yb) * t + dy, Z + H * t - valle(xt) * t * t - 6 * Math.sin(Math.PI * t) * (s < .25 || s > .75 ? 1 : 0.4)]; };
     for (let i = 0; i < N; i++) for (let j = 0; j < M; j++) F.push({ k: 'largo', pts: [pt(i / N, j / M), pt((i + 1) / N, j / M), pt((i + 1) / N, (j + 1) / M), pt(i / N, (j + 1) / M)], col: col('largo') });
     for (let i = 0; i < N; i++) { const x0 = i * L / N, x1 = (i + 1) * L / N; F.push({ k: 'largo', pts: [[x0, yb + dy, Z], [x1, yb + dy, Z], [x1, yb + dy, Z - Gv], [x0, yb + dy, Z - Gv]], col: col('largo') }); }
   });
   // culatas
   [0, 1].forEach(lado => {
-    const xb = lado ? L : 0, xt = lado ? 450 : 150, dx = lado ? ex : -ex;
+    const xb = lado ? L : 0, xt = lado ? 3 * q : q, dx = lado ? ex : -ex;
     const pt = (s, t) => [xb + (xt - xb) * t + dx, s * D + (D / 2 - s * D) * t, Z + H * t - 6 * Math.sin(Math.PI * t)];
     for (let i = 0; i < 6; i++) for (let j = 0; j < M; j++) F.push({ k: 'culata', pts: [pt(i / 6, j / M), pt((i + 1) / 6, j / M), pt((i + 1) / 6, (j + 1) / M), pt(i / 6, (j + 1) / M)], col: col('culata') });
     F.push({ k: 'culata', pts: [[xb + dx, 0, Z], [xb + dx, D, Z], [xb + dx, D, Z - Gv], [xb + dx, 0, Z - Gv]], col: col('culata') });
   });
   // patas (tubos) y forros de pata en las esquinas
-  const tubos = [[0, 0], [300, 0], [600, 0], [0, D], [300, D], [600, D]];
-  if (g.patasMedio) tubos.push([0, D / 2], [600, D / 2]);
+  const tubos = [[0, 0], [L / 2, 0], [L, 0], [0, D], [L / 2, D], [L, D]];
+  if (g.patasMedio) tubos.push([0, D / 2], [L, D / 2]);
   const caja = (x0, y0, z0, x1, y1, z1, c, k) => {
     const p = (x, y, z) => [x, y, z];
     [[p(x0, y0, z0), p(x1, y0, z0), p(x1, y0, z1), p(x0, y0, z1)], [p(x1, y0, z0), p(x1, y1, z0), p(x1, y1, z1), p(x1, y0, z1)],
@@ -154,7 +156,7 @@ function tpModelo(g, o = {}) {
   };
   tubos.forEach(([x, y]) => caja(x - 2.5, y - 2.5, 0, x + 2.5, y + 2.5, Z, TP_COL.tubo, 'tubo'));
   if (o.patas) {
-    const esq = [[0, 0, 1, 1], [600, 0, -1, 1], [600, D, -1, -1], [0, D, 1, -1]].slice(0, Math.min(4, g.m.patas));
+    const esq = [[0, 0, 1, 1], [L, 0, -1, 1], [L, D, -1, -1], [0, D, 1, -1]].slice(0, Math.min(4, g.m.patas));
     esq.forEach(([x, y, sx, sy]) => {
       const a = g.m.pataA / 2, b = g.m.pataB / 2, zb = Math.max(0, Z - g.m.pataL);
       F.push({ k: 'pata', pts: [[x, y, Z], [x + sx * a, y, Z], [x + sx * b, y, zb], [x, y, zb]], col: o.col ? TP_COL.pata : TP_COL.lona });
@@ -177,7 +179,7 @@ function tp3D(g, a, o = {}) {
     return { d: P.reduce((s, p) => s + p[2], 0) / P.length, svg: `<polygon points="${P.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="${tpHex(f.col, k)}" ${op < 1 ? `fill-opacity="${op}" stroke-opacity="${op}"` : ''} stroke="#14181b" stroke-width=".5" stroke-linejoin="round"/>` };
   }).sort((A, B) => A.d - B.d);
   // encuadre fijo para que no salte al girar
-  const Rh = Math.hypot(TP.L / 2, 300) + 20 + (o.ex || 0), zt = TP.H + g.m.pataL;
+  const Rh = Math.hypot(g.L / 2, g.F / 2) + 40 + (o.ex || 0), zt = TP.H + g.m.pataL;
   const top = -((zt - c[2]) * ce + Rh * se) - 30, bot = (c[2]) * ce + Rh * se + 20;
   let s = `<svg viewBox="${(-Rh).toFixed(0)} ${top.toFixed(0)} ${(2 * Rh).toFixed(0)} ${(bot - top).toFixed(0)}" role="img" aria-label="La carpa de 3 puntas en 3D">`;
   s += `<ellipse cx="0" cy="${(bot - 30).toFixed(0)}" rx="${(Rh * .8).toFixed(0)}" ry="${(Rh * .12).toFixed(0)}" fill="#14181b" opacity=".07"/>`;
@@ -189,20 +191,20 @@ function tp3D(g, a, o = {}) {
 // ---------- láminas 2D ----------
 // Vista de frente (lado de 6 m) o de lado (culata), con alturas
 function tpAlzado(g, vista) {
-  const P = g.m.pataL, H = g.H, Gv = g.G - st.aj.varilla, ancho = vista === 'largo' ? TP.L : g.F;
+  const P = g.m.pataL, H = g.H, Gv = g.G - st.aj.varilla, ancho = vista === 'largo' ? g.L : g.F, q = g.q;
   const W = 760, m = 70, sc = Math.min((W - 2 * m - 60) / ancho, 380 / (P + H)), Hh = (P + H) * sc + 120;
   const X = x => m + x * sc, Y = z => Hh - 50 - z * sc;
   let s = `<svg viewBox="0 0 ${W} ${Hh.toFixed(0)}" role="img" aria-label="Vista con alturas">${FL}`;
   s += `<line x1="20" y1="${Y(0)}" x2="${W - 20}" y2="${Y(0)}" stroke="#14181b" stroke-width="2"/>`;
-  const piso = vista === 'largo' ? [0, 300, 600] : (g.patasMedio ? [0, g.F / 2, g.F] : [0, g.F]);
+  const piso = vista === 'largo' ? [0, g.L / 2, g.L] : (g.patasMedio ? [0, g.F / 2, g.F] : [0, g.F]);
   piso.forEach(x => { s += `<rect x="${X(x) - 3}" y="${Y(P)}" width="6" height="${P * sc}" fill="${TP_COL.tubo}"/>`; });
   let techo;
   if (vista === 'largo') {
-    const pts = [[0, P], [150, P + H]];
-    for (let x = 160; x <= 440; x += 10) pts.push([x, P + H - (x > 150 && x < 450 ? 9 * Math.abs(Math.sin(Math.PI * (x - 150) / 150)) : 0)]);
-    pts.push([450, P + H], [600, P]);
+    const pts = [[0, P], [q, P + H]];
+    for (let i = 1; i < 40; i++) { const x = q + i * 2 * q / 40; pts.push([x, P + H - 9 * Math.abs(Math.sin(Math.PI * (x - q) / q))]); }
+    pts.push([3 * q, P + H], [g.L, P]);
     techo = pts;
-    [150, 300, 450].forEach(x => { s += `<line x1="${X(x)}" y1="${Y(P - 21)}" x2="${X(x)}" y2="${Y(P + H)}" stroke="${TP_COL.tubo}" stroke-width="3" stroke-dasharray="6 4"/>`; });
+    [q, 2 * q, 3 * q].forEach(x => { s += `<line x1="${X(x)}" y1="${Y(P - 21)}" x2="${X(x)}" y2="${Y(P + H)}" stroke="${TP_COL.tubo}" stroke-width="3" stroke-dasharray="6 4"/>`; });
   } else techo = [[0, P], [g.F / 2, P + H], [g.F, P]];
   s += `<polygon points="${techo.map(([x, z]) => X(x).toFixed(1) + ',' + Y(z).toFixed(1)).join(' ')} ${X(ancho)},${Y(P - Gv)} ${X(0)},${Y(P - Gv)}" fill="${vista === 'largo' ? TP_COL.largo : TP_COL.culata}" fill-opacity=".55" stroke="#14181b" stroke-width="2.5" stroke-linejoin="round"/>`;
   s += `<line x1="${X(0)}" y1="${Y(P)}" x2="${X(ancho)}" y2="${Y(P)}" stroke="#14181b" stroke-width="1" stroke-dasharray="4 4"/>`;
@@ -211,32 +213,33 @@ function tpAlzado(g, vista) {
   s += flecha(xd, Y(0), xd, Y(P), '#14181b', 2) + glT(xd + 8, Y(P / 2), n1(P), { fs: 24, ta: 'start' });
   s += flecha(xd, Y(P), xd, Y(P + H), TP_COL.sella, 2) + glT(xd + 8, Y(P + H / 2), n1(H), { fs: 24, ta: 'start', col: TP_COL.sella });
   s += glT(X(ancho / 2), Y(0) + 36, `${n1(ancho)}`, { fs: 26 });
-  s += glT(X(vista === 'largo' ? 150 : g.F / 2), Y(P + H) - 14, `punta a ${n1(P + H)} del piso`, { fs: 22 });
+  s += glT(X(vista === 'largo' ? q : g.F / 2), Y(P + H) - 14, `punta a ${n1(P + H)} del piso`, { fs: 22 });
   s += glT(X(ancho / 2), Y(P - Gv / 2) + 8, `gola ${n1(g.G)}`, { fs: 20, col: '#4a545b' });
   return s + '</svg>';
 }
 
 // Vista desde arriba: dónde va cada pieza y la estructura que hay que alargar
 function tpPlanta(g, modo) {
-  const W = 760, m = 60, sc = (W - 2 * m) / TP.L, Hh = g.F * sc + 2 * m + 40;
-  const X = x => m + x * sc, Y = y => m + 20 + y * sc, D = g.F;
+  const W = 760, m = 60, sc = Math.min((W - 2 * m) / g.L, 480 / g.F), Hh = g.F * sc + 2 * m + 40;
+  const L = g.L, q = g.q, X = x => (W - L * sc) / 2 + x * sc, Y = y => m + 20 + y * sc, D = g.F;
   let s = `<svg viewBox="0 0 ${W} ${Hh.toFixed(0)}" role="img" aria-label="La carpa vista desde arriba">${FL}`;
   const pol = (pts, c) => `<polygon points="${pts.map(([x, y]) => X(x).toFixed(1) + ',' + Y(y).toFixed(1)).join(' ')}" fill="${c}" fill-opacity="${modo === 'piezas' ? .7 : .25}" stroke="#14181b" stroke-width="2" stroke-linejoin="round"/>`;
-  s += pol([[0, 0], [600, 0], [450, D / 2], [150, D / 2]], TP_COL.largo) + pol([[0, D], [600, D], [450, D / 2], [150, D / 2]], TP_COL.largo);
-  s += pol([[0, 0], [150, D / 2], [0, D]], TP_COL.culata) + pol([[600, 0], [450, D / 2], [600, D]], TP_COL.culata);
-  [150, 300, 450].forEach(x => { s += `<circle cx="${X(x)}" cy="${Y(D / 2)}" r="9" fill="${TP_COL.sella}" stroke="#14181b" stroke-width="2"/>`; });
-  const tubos = [[0, 0], [300, 0], [600, 0], [0, D], [300, D], [600, D]];
-  if (g.patasMedio) tubos.push([0, D / 2], [600, D / 2]);
+  s += pol([[0, 0], [L, 0], [3 * q, D / 2], [q, D / 2]], TP_COL.largo) + pol([[0, D], [L, D], [3 * q, D / 2], [q, D / 2]], TP_COL.largo);
+  s += pol([[0, 0], [q, D / 2], [0, D]], TP_COL.culata) + pol([[L, 0], [3 * q, D / 2], [L, D]], TP_COL.culata);
+  [q, 2 * q, 3 * q].forEach(x => { s += `<circle cx="${X(x)}" cy="${Y(D / 2)}" r="9" fill="${TP_COL.sella}" stroke="#14181b" stroke-width="2"/>`; });
+  const tubos = [[0, 0], [L / 2, 0], [L, 0], [0, D], [L / 2, D], [L, D]];
+  if (g.patasMedio) tubos.push([0, D / 2], [L, D / 2]);
   tubos.forEach(([x, y]) => { s += `<rect x="${X(x) - 7}" y="${Y(y) - 7}" width="14" height="14" fill="#39444b"/>`; });
   if (modo === 'piezas') {
-    s += glT(X(300), Y(D / 4) + 9, 'lado de 6 m', { fs: 24 }) + glT(X(300), Y(3 * D / 4) + 9, 'lado de 6 m', { fs: 24 });
-    s += glT(X(55), Y(D / 2) + 8, 'culata', { fs: 20 }) + glT(X(545), Y(D / 2) + 8, 'culata', { fs: 20 });
-    s += glT(X(300), Y(D / 2) - 16, 'sello recto de punta a punta', { fs: 18, col: TP_COL.sella });
+    s += glT(X(L / 2), Y(D / 4) + 9, `lado de ${nm(L)} m`, { fs: 24 }) + glT(X(L / 2), Y(3 * D / 4) + 9, `lado de ${nm(L)} m`, { fs: 24 });
+    s += glT(X(q * .37), Y(D / 2) + 8, 'culata', { fs: 20 }) + glT(X(L - q * .37), Y(D / 2) + 8, 'culata', { fs: 20 });
+    s += glT(X(L / 2), Y(D / 2) - 16, 'sello recto de punta a punta', { fs: 18, col: TP_COL.sella });
   } else {
-    s += flecha(X(0), Y(0) - 26, X(300), Y(0) - 26) + glT(X(150), Y(0) - 34, '300 (hoy 297)', { fs: 22 });
-    s += flecha(X(300), Y(0) - 26, X(600), Y(0) - 26) + glT(X(450), Y(0) - 34, '300 (hoy 297)', { fs: 22 });
-    s += flecha(X(600) + 26, Y(0), X(600) + 26, Y(D)) + `<text transform="translate(${X(600) + 44} ${Y(D / 2)}) rotate(90)" font-size="22" text-anchor="middle">${n1(D)}</text>`;
-    s += glT(X(300), Y(D) + 40, `cada módulo +3 → 600 en total`, { fs: 22, col: TP_COL.sella });
+    const mod = n1(L / 2), muestra = L === 600 ? ' (hoy 297)' : '';
+    s += flecha(X(0), Y(0) - 26, X(L / 2), Y(0) - 26) + glT(X(q), Y(0) - 34, mod + muestra, { fs: 22 });
+    s += flecha(X(L / 2), Y(0) - 26, X(L), Y(0) - 26) + glT(X(3 * q), Y(0) - 34, mod + muestra, { fs: 22 });
+    s += flecha(X(L) + 26, Y(0), X(L) + 26, Y(D)) + `<text transform="translate(${X(L) + 44} ${Y(D / 2)}) rotate(90)" font-size="22" text-anchor="middle">${n1(D)}</text>`;
+    s += glT(X(L / 2), Y(D) + 40, L === 600 ? 'cada módulo +3 → 600 en total' : `2 módulos de ${mod}`, { fs: 22, col: TP_COL.sella });
   }
   return s + '</svg>';
 }
@@ -268,8 +271,13 @@ function tpLadoSvg(g, l, o = {}) {
   }
   s += glT(X(0), Y(l.G / 2) + 7, `gola ${n1(l.G)}`, { fs: 20, col: '#4a545b' });
   s += flecha(X(-l.Wb), Y(0) + 22, X(l.Wb), Y(0) + 22) + glT(X(0), Y(0) + 48, n1(2 * l.Wb), { fs: 26 });
-  s += flecha(X(l.Wb) + 20, Y(0), X(l.Wb) + 20, Y(l.Ht)) + `<text transform="translate(${X(l.Wb) + 38} ${Y(l.Ht / 2)}) rotate(90)" font-size="24" text-anchor="middle" fill="#14181b">${n1(l.Ht)}</text>`;
-  if (l.top) s += glT(X(0), Y(l.Ht) - 12, `${n1(2 * l.half(l.Ht))} arriba (se sella con el otro lado de 6 m)`, { fs: 20 });
+  s += flecha(X(l.Wb) + 20, Y(0), X(l.Wb) + 20, Y(l.Ht)) + `<text transform="translate(${X(l.Wb) + 38} ${Y(l.Ht / 2)}) rotate(90)" font-size="24" text-anchor="middle" fill="#14181b">alto ${n1(l.Ht)}</text>`;
+  // la arista (la diagonal de la esquina de la gola a la punta), escrita sobre el borde izquierdo
+  const ax0 = X(-l.Wb), ay0 = Y(l.G), ax1 = X(-l.Wt), ay1 = Y(l.yT), ang = Math.atan2(ay1 - ay0, ax1 - ax0) * 180 / Math.PI;
+  const amx = (ax0 + ax1) / 2, amy = (ay0 + ay1) / 2, nx = (ay1 - ay0), ny = -(ax1 - ax0), nl = Math.hypot(nx, ny) || 1;
+  s += `<line x1="${ax0}" y1="${ay0}" x2="${ax1}" y2="${ay1}" stroke="${TP_COL.curva}" stroke-width="5" opacity=".8"/>`;
+  s += `<text transform="translate(${(amx + nx / nl * 18).toFixed(1)} ${(amy + ny / nl * 18).toFixed(1)}) rotate(${ang.toFixed(1)})" font-size="22" text-anchor="middle" fill="${TP_COL.curva}" stroke="#fff" stroke-width="4" paint-order="stroke">arista ${n1(l.Lc)}</text>`;
+  if (l.top) s += glT(X(0), Y(l.Ht) - 12, `${n1(2 * l.half(l.Ht))} arriba (se sella con el otro lado largo)`, { fs: 20 });
   else s += glT(X(0), Y(l.Ht) - 12, 'punta', { fs: 22 });
   return s + '</svg>';
 }
@@ -294,7 +302,7 @@ function tpFicha(g, fr) {
     const bh = (fr.ult ? g.s / 2 : g.s) * s, wt = fr.arriba / 2;
     r += glAp(.7, `<rect x="${X(-wt)}" y="${Y(fr.alto)}" width="${2 * wt * s}" height="${Math.max(3, bh)}" fill="${TP_COL.sella}" fill-opacity=".55"/>`);
     const nxt = l.franjas[fr.idx + 1];
-    r += glAp(.8, glT(X(0), Y(fr.alto) + Math.max(3, bh) + 22, fr.ult ? `+${n1(g.s / 2)}: se sella con el otro lado de 6 m` : `${n1(g.s)}: aquí se monta la ${nxt.n}`, { fs: 18, col: TP_COL.sella }));
+    r += glAp(.8, glT(X(0), Y(fr.alto) + Math.max(3, bh) + 22, fr.ult ? `+${n1(g.s / 2)}: se sella con el otro lado largo` : `${n1(g.s)}: aquí se monta la ${nxt.n}`, { fs: 18, col: TP_COL.sella }));
   }
   // medio selle en las aristas
   const yA = Math.max(0, (fr.conGola ? l.G : fr.y0) - fr.y0);
@@ -361,33 +369,38 @@ const TP_ESC = {
   carpa: g => {
     const m = g.m;
     return { titulo: `Plegable de 3 puntas`, arriba: `
-      <h2>Fondo</h2>
-      <div class="tamanos tp-fondos">${TP.FONDOS.map(F => `<button data-tpf="${F}" class="${F === m.F ? 'activo' : ''}"><b>6×${F / 100}</b><span>metros</span></button>`).join('')}</div>
+      <h2>Medidas</h2>
+      <div class="tamanos tp-fondos">${TP.RAPIDAS.map(([L, F]) => `<button data-tpmed="${L}x${F}" class="${L === m.L && F === m.F ? 'activo' : ''}"><b>${L / 100}×${F / 100}</b><span>metros</span></button>`).join('')}</div>
+      <div class="co-tres bo-dos">
+        <div class="paso-num"><span class="etq">Largo, donde van las 3 puntas (m)</span><div class="stepper"><button data-tpdimd="L" data-d="-0.01" aria-label="Menos largo">−</button><input data-tpdim="L" type="text" inputmode="decimal" value="${String(m.L / 100).replace('.', ',')}"><button data-tpdimd="L" data-d="0.01" aria-label="Más largo">+</button></div></div>
+        <div class="paso-num"><span class="etq">Fondo (m)</span><div class="stepper"><button data-tpdimd="F" data-d="-0.01" aria-label="Menos fondo">−</button><input data-tpdim="F" type="text" inputmode="decimal" value="${String(m.F / 100).replace('.', ',')}"><button data-tpdimd="F" data-d="0.01" aria-label="Más fondo">+</button></div></div>
+      </div>
+      ${TP.err ? `<p class="aviso tp-err" role="alert">${TP.err}</p>` : ''}
       <h2>Lona</h2>
       <div class="co-tres bo-dos">${tpCampo('rollo', 'Ancho del rollo (cm)', 1, m.rollo)}</div>
       <h2>Patas</h2>
       <div class="co-tres bo-dos">${tpCampo('pataL', 'Largo (cm)', 1, m.pataL)}${tpCampo('patas', '¿Cuántas?', 1, m.patas)}${tpCampo('pataA', 'Lado ancho (cm)', .5, m.pataA)}${tpCampo('pataB', 'Lado angosto (cm)', .5, m.pataB)}</div>
       <p class="nota">Con patas de <b>${n1(m.pataL)}</b> la punta queda a <b>${n1(m.pataL + g.H)}</b> del piso (la de muestra: 335 con unos 212).</p>`, cuadros: [
-      { t: `<b>6 × ${n1(g.F / 100)}</b> con <b>3 puntas</b> en fila. Las 3 puntas son iguales.`, anim: { dur: 7000, f: u => tp3D(g, -0.7 + u * 1.4, { patas: 1 }) } },
-      { t: `De frente (lado de 6 m): la punta sube <b>${n1(g.H)}</b> sobre la esquina. Entre puntas la lona se comba sola: se corta recto.`, svg: () => tpAlzado(g, 'largo') },
-      { t: `De lado (lado de ${n1(g.F / 100)} m)${g.patasMedio ? `: desde 5 m lleva <b>3 patas</b> en este lado` : ''}.`, svg: () => tpAlzado(g, 'culata') },
-      { t: `Son <b>4 piezas</b> de techo: 2 <b>lados de 6 m</b> (de 4 esquinas, cubren las 3 puntas) y 2 <b>culatas</b>.`, svg: () => tpPlanta(g, 'piezas') },
+      { t: `<b>${nm(g.L)} × ${nm(g.F)}</b> con <b>3 puntas</b> en fila. Las 3 puntas son iguales.`, anim: { dur: 7000, f: u => tp3D(g, -0.7 + u * 1.4, { patas: 1 }) } },
+      { t: `De frente (lado de ${nm(g.L)} m): la punta sube <b>${n1(g.H)}</b> sobre la esquina. Entre puntas la lona se comba sola: se corta recto.`, svg: () => tpAlzado(g, 'largo') },
+      { t: `De lado (lado de ${nm(g.F)} m)${g.patasMedio ? `: desde 5 m lleva <b>3 patas</b> en este lado` : ''}.`, svg: () => tpAlzado(g, 'culata') },
+      { t: `Son <b>4 piezas</b> de techo: 2 <b>lados de ${nm(g.L)} m</b> (de 4 esquinas, cubren las 3 puntas) y 2 <b>culatas</b>.`, svg: () => tpPlanta(g, 'piezas') },
     ] };
   },
   piezas: g => ({ titulo: 'Las piezas', arriba: `<div class="total"><span class="etq">Lona justa</span><b>${n1(g.ac.largo / 100)} m</b><span>de rollo de ${n0(g.m.rollo)}. Compra <b>${n1(g.ac.comprar)} m</b> (8 % más).</span></div>`, cuadros: [
     { t: `Cada lado se corta en <b>franjas</b> del ancho del rollo (<b>${n0(g.m.rollo)}</b>) y se montan <b>${n1(g.s)}</b> para sellar.`, anim: { dur: 5000, f: u => tp3D(g, -0.6 + u * .5, { col: 1, patas: 1, ex: 40 * Math.sin(Math.PI * Math.min(1, u * 1.2)) }) } },
-    ...g.lados.map(l => ({ t: `<b>${l.nombre}</b> armado: ${l.franjas.map(f => boNum(f)).join(' + ')}. Abajo <b>${n1(2 * l.Wb)}</b>, alto <b>${n1(l.Ht)}</b>.`, svg: () => tpLadoSvg(g, l) })),
+    ...g.lados.map(l => ({ t: `<b>${l.nombre}</b>: ${l.franjas.map(f => `${boNum(f)} ${n1(f.alto)}`).join(' + ')}${l.franjas.length > 1 ? ` − ${n1(g.s * (l.franjas.length - 1))} de selle` : ''} = <b>${n1(l.Ht)}</b> de alto con la gola. La <b style="color:${TP_COL.curva}">arista</b> (esquina de la gola → punta) mide <b>${n1(l.Lc)}</b>.`, svg: () => tpLadoSvg(g, l) })),
     { t: `Así sale del rollo: <b>${n1(g.ac.largo / 100)} m</b>. Una al derecho y otra al revés para gastar menos.`, svg: () => tpRollo(g), alto: true },
     ...g.lados.flatMap(l => l.franjas.map(fr => tpFichaCu(g, fr))),
     { t: `${boNum(g.pata)} <b>Pata</b> (corta <b>${g.m.patas}</b>): <b>${n1(g.m.pataL)}</b> × <b>${n1(g.m.pataA)}</b> arriba × <b>${n1(g.m.pataB)}</b> abajo.`, svg: () => tpFichaPata(g), alto: true },
   ] }),
   curva: null,   // pantalla propia, como la plegable (tpCurvaBase)
-  estructura: g => ({ titulo: 'La estructura', arriba: `<p class="guia">La lona sale para <b>600 × ${n1(g.F)}</b>. La estructura de muestra mide <b>${TP.REAL} × 300</b>: hay que alargarla <b>${TP.L - TP.REAL} cm</b> en el lado de 6 m, <b>3 por módulo</b>, repartidos igual en cada tubo.</p>`, cuadros: [
-    { t: `Cada módulo debe quedar de <b>300</b>. Las puntas (en rojo) quedan en la mitad del fondo.`, svg: () => tpPlanta(g, 'estructura') },
+  estructura: g => ({ titulo: 'La estructura', arriba: `<p class="guia">La lona sale para <b>${n1(g.L)} × ${n1(g.F)}</b>.${g.L === 600 ? ` La estructura de muestra mide <b>${TP.REAL} × 300</b>: hay que alargarla <b>${600 - TP.REAL} cm</b> en el lado de 6 m, <b>3 por módulo</b>, repartidos igual en cada tubo.` : ' La estructura tiene que medir exactamente eso.'}</p>`, cuadros: [
+    { t: `Cada módulo debe quedar de <b>${n1(g.L / 2)}</b>. Las puntas (en rojo) quedan en la mitad del fondo.`, svg: () => tpPlanta(g, 'estructura') },
     { t: `Tubo de pico: <b>${n1(TP.POSTE)}</b> desde abajo de la cruceta. Sobresale <b>${n1(g.H)}</b> por encima de la esquina; la cruceta queda unos <b>${n1(TP.POSTE - g.H)}</b> más abajo.`, svg: () => tpAlzado(g, 'largo') },
   ] }),
   final: g => ({ titulo: 'Listo', cuadros: [
-    { t: `Plegable <b>6 × ${n1(g.F / 100)}</b> de 3 puntas: <b>${g.piezas.length - 1}</b> moldes de techo (cada uno ×2) y <b>${g.m.patas}</b> patas. Compra <b>${n1(g.ac.comprar)} m</b> de rollo de ${n0(g.m.rollo)}.`, anim: { dur: 8000, f: u => tp3D(g, -0.6 + u * 6.283, { patas: 1 }) } },
+    { t: `Plegable <b>${nm(g.L)} × ${nm(g.F)}</b> de 3 puntas: <b>${g.piezas.length - 1}</b> moldes de techo (cada uno ×2) y <b>${g.m.patas}</b> patas. Compra <b>${n1(g.ac.comprar)} m</b> de rollo de ${n0(g.m.rollo)}.`, anim: { dur: 8000, f: u => tp3D(g, -0.6 + u * 6.283, { patas: 1 }) } },
   ], abajo: `<button class="cta verde" id="tpCompartir">Enviar medidas por WhatsApp</button>
     <p class="aviso">Está calculada con las medidas de la estructura y la curva de la 3×3. Todavía no se ha comprobado con una carpa armada.</p>` }),
 };
@@ -411,7 +424,7 @@ function tpCuadro(j) {
     TP.raf = requestAnimationFrame(paso);
   } else { caja.innerHTML = cu.svg(); sigue(4200); }
 }
-const tpNombre = () => `3 puntas 6×${n1(TP.m.F / 100)}`;
+const tpNombre = () => `3 puntas ${nm(TP.m.L)}×${nm(TP.m.F)}`;
 function pintarTres() {
   tpParar();
   const g = TP.g = tpCalcular();
@@ -435,7 +448,7 @@ function pintarTres() {
       </div>
     </div>
     <div class="gl-leyenda">
-      ${[['largo', 'Lados de 6 m'], ['culata', 'Culatas'], ['pata', 'Patas']].map(([k, t]) => `<span><i style="background:${TP_COL[k]}"></i>${t}</span>`).join('')}
+      ${[['largo', 'Lados largos'], ['culata', 'Culatas'], ['pata', 'Patas']].map(([k, t]) => `<span><i style="background:${TP_COL[k]}"></i>${t}</span>`).join('')}
       <span class="gl-sel"><i></i><em class="bo-em">se sella: <b>${n1(g.s)}</b> (${n1(g.s / 2)} en cada borde) · varilla <b>${n1(st.aj.varilla)}</b></em></span>
     </div>${esc.abajo || ''}`;
   }
@@ -454,7 +467,7 @@ function tpCurvaBase(g) {
   if (TP.puntos === null) TP.puntos = tpCada20(g.lados[TP.lado].Lc);
   $('#tpCuerpo').innerHTML = `<h1>Marcar la curva</h1>
     <p class="guia">Con el lado ya sellado en recto, traza una línea recta de la <b>punta</b> a la <b>esquina de la gola</b>. Mueve el botón por la recta y mide en escuadra lo que se hunde.</p>
-    <div class="seg" id="tpLadoSel">${g.lados.map((l, i) => `<button data-tplado="${i}" aria-pressed="${i === TP.lado}">${i === 0 ? 'Lado de 6 m' : 'Culata'}</button>`).join('')}</div>
+    <div class="seg" id="tpLadoSel">${g.lados.map((l, i) => `<button data-tplado="${i}" aria-pressed="${i === TP.lado}">${i === 0 ? `Lado de ${nm(g.L)} m` : 'Culata'}</button>`).join('')}</div>
     <div class="curva-dibujo" id="tpCurvaSvg"></div>
     <div class="lectura">
       <div class="dato azul"><span class="etq">Desde la punta</span><b id="tpLecD"></b></div>
@@ -520,7 +533,7 @@ function tpPintarCurva() {
   $('#tpPuntos').innerHTML = lista.length
     ? lista.map(([d, i]) => `<div class="punto-fila"><div><span class="etq">Desde la punta</span><b>${n1(d)} cm</b></div><div class="hundeval"><span class="etq">Se hunde</span><b>${n1(l.enRecta(d).f)} cm</b></div><button class="quitar" data-tpquitar="${i}">Quitar</button></div>`).join('')
     : '<p class="vacio">Mueve el botón y toca «Marcar este punto».</p>';
-  $('#tpCurvaNota').textContent = `La recta mide ${n1(l.Lc)} cm. Lo más hondo es a ${n1(l.Lc * U0)} cm de la punta (${n1(g.sag)} cm). En la punta y en la esquina no se hunde nada.${l.top ? ' Las 2 aristas del lado de 6 m son iguales; el borde de arriba va recto.' : ''}`;
+  $('#tpCurvaNota').textContent = `La recta mide ${n1(l.Lc)} cm. Lo más hondo es a ${n1(l.Lc * U0)} cm de la punta (${n1(g.sag)} cm). En la punta y en la esquina no se hunde nada.${l.top ? ' Las 2 aristas del lado largo son iguales; el borde de arriba va recto.' : ''}`;
   guardarLS('tresPuntos', TP.puntos);
 }
 function tpMoverA(d) { TP.d = Math.round(d * 2) / 2; tpPintarCurva(); }
@@ -532,16 +545,17 @@ function tpArrastrar(ev) {
 }
 
 function tpTexto(g) {
-  let t = `*PLEGABLE 3 PUNTAS 6 × ${n1(g.F / 100)}* (rollo de ${n0(g.m.rollo)}, selle ${n1(g.s)}, gola ${n1(g.G)} con varilla)\nMedidas de CORTE (lados rectos; la curva se marca después):\n`;
+  let t = `*PLEGABLE 3 PUNTAS ${nm(g.L)} × ${nm(g.F)}* (rollo de ${n0(g.m.rollo)}, selle ${n1(g.s)}, gola ${n1(g.G)} con varilla)\nMedidas de CORTE (lados rectos; la curva se marca después):\n`;
   g.lados.forEach(l => {
     t += `\n*${l.nombre}* (cortar 2 de cada franja)\n`;
     l.franjas.forEach(fr => { t += `• ${fr.n}. ${fr.nombre}: abajo ${n1(fr.abajo)}, alto ${n1(fr.alto)}, ${fr.arriba ? 'arriba ' + n1(fr.arriba) : 'en punta'}\n`; });
+    t += `Armado: alto ${n1(l.Ht)} con la gola · arista ${n1(l.Lc)}\n`;
     const pts = (TP.puntos || tpCada20(l.Lc)).filter(d => d <= l.Lc);
     t += `Curva (recta de ${n1(l.Lc)}), desde la punta → se hunde:\n` + pts.map(d => `   ${n1(d)} cm → ${n1(l.enRecta(d).f)} cm`).join('\n') + '\n';
   });
   t += `\n*Patas* (cortar ${g.m.patas}): largo ${n1(g.m.pataL)}, ancho ${n1(g.m.pataA)}, angosto ${n1(g.m.pataB)}`;
   t += `\n*Lona:* ${n1(g.ac.largo / 100)} m justos → comprar ${n1(g.ac.comprar)} m`;
-  t += `\n*Estructura:* alargar el lado de 6 m de ${TP.REAL} a 600 (3 cm por módulo)`;
+  t += g.L === 600 ? `\n*Estructura:* alargar el lado de 6 m de ${TP.REAL} a 600 (3 cm por módulo)` : `\n*Estructura:* 2 módulos de ${n1(g.L / 2)} × ${n1(g.F)}`;
   return t;
 }
 function tpIr(j) { TP.paso = j; pintarTres(); window.scrollTo(0, 0); }
@@ -560,7 +574,8 @@ $('#v-tres').addEventListener('click', async e => {
   if (b.dataset.paso) return tpIr(+b.dataset.paso);
   if (b.id === 'tpAtras') return tpIr(TP.paso - 1);
   if (b.id === 'tpSig') return tpIr(TP.paso + 1);
-  if (b.dataset.tpf) { TP.m.F = +b.dataset.tpf; guardarLS('tresP', TP.m); const y = window.scrollY; pintarTres(); window.scrollTo(0, y); return; }
+  if (b.dataset.tpmed) { const [L, F] = b.dataset.tpmed.split('x').map(Number); TP.err = ''; TP.m.L = L; TP.m.F = F; guardarLS('tresP', TP.m); const y = window.scrollY; pintarTres(); window.scrollTo(0, y); return; }
+  if (b.dataset.tpdimd) return tpMedida(b.dataset.tpdimd, TP.m[b.dataset.tpdimd] / 100 + parseFloat(b.dataset.d));
   if (b.dataset.tp) return tpCambiar(b.dataset.tp, TP.m[b.dataset.tp] + parseFloat(b.dataset.d));
   if (b.dataset.tplado) { TP.lado = +b.dataset.tplado; return tpPintarCurva(); }
   if (b.dataset.tpmover) return tpMoverA(TP.d + parseFloat(b.dataset.tpmover));
@@ -578,6 +593,18 @@ $('#v-tres').addEventListener('click', async e => {
     location.href = 'https://wa.me/?text=' + encodeURIComponent(t);
   }
 });
-$('#v-tres').addEventListener('change', e => { const k = e.target.dataset.tpin; if (k) tpCambiar(k, parseFloat(String(e.target.value).replace(',', '.'))); });
+$('#v-tres').addEventListener('change', e => {
+  const k = e.target.dataset.tpin; if (k) return tpCambiar(k, parseFloat(String(e.target.value).replace(',', '.')));
+  const d = e.target.dataset.tpdim; if (d) tpMedida(d, parseFloat(String(e.target.value).replace(',', '.')));
+});
+// largo y fondo en metros, con centímetros (ej. 4,5 × 3,14). Más de 6 × 6 no: el peso tumba la estructura.
+function tpMedida(k, v) {
+  const nombre = k === 'L' ? 'El largo' : 'El fondo';
+  if (!(v > 0)) TP.err = `${nombre} no es un número válido.`;
+  else if (v * 100 > TP.MAX + 1e-6) TP.err = `${nombre} no puede pasar de ${TP.MAX / 100} m: la 3 puntas llega hasta 6 × 6. Más grande, el peso de la lona tumba la estructura.`;
+  else if (v * 100 < TP.MIN - 1e-6) TP.err = `${nombre} debe ser de al menos ${TP.MIN / 100} m.`;
+  else { TP.err = ''; TP.m[k] = Math.round(v * 100); guardarLS('tresP', TP.m); }
+  const y = window.scrollY; pintarTres(); window.scrollTo(0, y);
+}
 $('#tipoTres').addEventListener('click', () => ir('tres'));
 document.addEventListener('visibilitychange', () => { if (document.hidden) tpParar(); });
