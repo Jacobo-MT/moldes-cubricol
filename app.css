@@ -256,14 +256,45 @@ svg .cae { animation: coCae 1.4s cubic-bezier(.3,.7,.4,1) both; }
 .gl-leyenda .bo-em { font-style: normal; display: inline; text-align: center; }
 
 /* botón y ventana del render */
-.pill-render { margin-left: 0; background: var(--rojo); border-color: var(--rojo); white-space: nowrap; }
+.pill-render { margin-left: 0; flex: none; background: var(--rojo); border-color: var(--rojo); white-space: nowrap; }
 .pill { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .modal-render { position: fixed; inset: 0; z-index: 20; background: #14181bd9; display: grid; place-items: center; padding: 16px; }
 .modal-render[hidden] { display: none; }
 .mr-caja { width: min(100%, 560px); background: var(--hoja); border-radius: 18px; padding: 12px; display: grid; gap: 10px; }
 .mr-top { display: flex; align-items: center; justify-content: space-between; font-size: 1.15rem; }
 .mr-x { width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--linea); background: var(--fondo); font-size: 1.2rem; font-weight: 800; }
-.mr-caja video { width: 100%; aspect-ratio: 1; border-radius: 12px; background: #d9dcdf; display: block; }
+.mr-caja video { width: 100%; aspect-ratio: 1; max-height: 56vh; object-fit: contain; border-radius: 12px; background: #d9dcdf; display: block; }
+/* controles del video: botones grandes para el dedo */
+.modal-render { overflow: auto; }
+.mr-tabs { display: flex; gap: 8px; }
+.mr-tabs button { flex: 1; min-height: 44px; border-radius: 12px; border: 2px solid var(--linea); background: var(--fondo); font-weight: 700; }
+.mr-tabs button[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+.mr-marco { position: relative; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+.mr-marco video { pointer-events: none; }
+.mr-linea { -webkit-appearance: none; appearance: none; width: 100%; height: 36px; margin: -4px 0; background: transparent; touch-action: none; --p: 0%; }
+.mr-linea::-webkit-slider-runnable-track { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--rojo) var(--p), var(--linea) var(--p)); }
+.mr-linea::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -10px; border-radius: 50%; background: #fff; border: 5px solid var(--rojo); box-shadow: 0 1px 4px #0005; }
+.mr-linea::-moz-range-track { height: 10px; border-radius: 5px; background: var(--linea); }
+.mr-linea::-moz-range-progress { height: 10px; border-radius: 5px; background: var(--rojo); }
+.mr-linea::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 5px solid var(--rojo); }
+.mr-ctrl { display: grid; grid-template-columns: 1fr 1fr 1.2fr 1fr 1fr; gap: 8px; align-items: center; }
+.mr-b { min-height: 58px; min-width: 0; border-radius: 14px; border: 2px solid var(--linea); background: var(--fondo); display: grid; place-items: center; align-content: center; gap: 1px; padding: 4px 0; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.mr-b svg { width: 26px; height: 26px; fill: var(--tinta); pointer-events: none; }
+.mr-b span { font-size: .78rem; font-weight: 700; color: var(--grafito); pointer-events: none; }
+.mr-b:active { background: var(--linea); }
+.mr-play { background: var(--rojo); border-color: var(--rojo); min-height: 64px; }
+.mr-play:active { background: #a8171d; }
+.mr-play svg { width: 36px; height: 36px; fill: #fff; }
+.mr-fila { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.mr-marcas { display: flex; flex-wrap: wrap; gap: 6px; }
+.mr-marcas button, .mr-vel { min-height: 42px; padding: 0 11px; border-radius: 21px; border: 2px solid var(--azul); background: var(--azul-suave); font-weight: 700; font-size: .92rem; white-space: nowrap; }
+.mr-vel { border-color: var(--linea); background: var(--fondo); min-width: 96px; margin-left: auto; }
+/* botón de la estructura en el glamping */
+.gl-est { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 14px; margin: 10px 0; border-radius: 16px; border: 2px solid var(--rojo); background: var(--hoja); }
+.gl-est svg { width: 40px; height: 40px; flex: none; fill: none; stroke: var(--rojo); stroke-width: 2; stroke-linejoin: round; }
+.gl-est span { flex: 1; color: var(--grafito); }
+.gl-est b { display: block; font-size: 1.1rem; color: var(--tinta); }
+.gl-est i { font-style: normal; color: var(--rojo); font-size: 1.3rem; }
 .mr-nota { margin: 0; text-align: center; font-weight: 700; color: var(--grafito); }
 
 /* ===== inicio: foto real difuminada de fondo, logo en la esquina, botones uno debajo del otro ===== */

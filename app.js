@@ -370,22 +370,16 @@ $('#pillCarpa').addEventListener('click', () => ir('carpa'));
 const RENDERS = {
   bolso: { src: 'render/bolsito.mp4', titulo: 'Bolsito: cómo se arma', nota: 'El 4 va atrás del 1 · el 2 sobre el 1 · el 3 sobre el 2.' },
   tres: { src: 'render/tres-puntas.mp4', titulo: '3 puntas 6 × 3', nota: 'Primero la estructura sola, después con la lona. Arista 245 en todas las piezas.' },
-  glamping: { src: 'render/glamping.mp4', titulo: 'Glamping 3 × 3,90', nota: 'Escalera 0,80 + carpa 2,50 + cubo 0,60 = 3,90 m.' },
+  glamping: [
+    { tab: 'Estructura', src: 'render/glamping-estructura.mp4', titulo: 'Glamping: la estructura', nota: 'Naranja: la A · gris: el marco · azul: el cubo.',
+      marcas: [['Adelante', 5.6], ['Tubo 319', 8.6], ['De lado', 16.8], ['Atrás', 22]] },
+    { tab: 'Con lona', src: 'render/glamping.mp4', titulo: 'Glamping 3 × 3,90', nota: 'Escalera 0,80 + carpa 2,50 + cubo 0,60 = 3,90 m.' },
+  ],
   cochera: { src: 'render/cochera.mp4', titulo: 'Cochera 4,70 × 2,25 × 2,27', nota: 'Los 7 arcos se abren y cierran la concha; después, los 6 gajos.' },
 };
 // la plegable (3 × 3 calibrada) tiene el mismo video en todas sus pestañas
 const R_PLEG = { src: 'render/plegable.mp4', titulo: 'Plegable 3 × 3', nota: 'Primero la estructura sola, después con la lona.' };
 ['carpa', 'piezas', 'curva', 'patas', 'lona'].forEach(v => { RENDERS[v] = R_PLEG; });
-function cerrarRender() { const v = $('#mrVideo'); v.pause(); $('#modalRender').hidden = true; }
-$('#btnRender').addEventListener('click', () => {
-  const r = RENDERS[st.vista]; if (!r) return;
-  const v = $('#mrVideo');
-  if (v.getAttribute('src') !== r.src) v.src = r.src;
-  $('#mrTitulo').textContent = r.titulo; $('#mrNota').textContent = r.nota;
-  $('#modalRender').hidden = false; v.currentTime = 0; v.play().catch(() => {});
-});
-$('#mrCerrar').addEventListener('click', cerrarRender);
-$('#modalRender').addEventListener('click', e => { if (e.target.id === 'modalRender') cerrarRender(); });
 $('#btnAjustes').addEventListener('click', () => { st.volver = ['inicio', 'cochera', 'glamping', 'bolso', 'tres'].includes(st.vista) ? st.vista : 'piezas'; ir('ajustes'); });
 $('#cerrarAjustes').addEventListener('click', () => ir(st.volver || 'piezas'));
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) ir(b.dataset.v); });

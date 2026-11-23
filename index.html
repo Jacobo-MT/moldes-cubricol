@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Narrow:wght@600;700&display=swap">
-<link rel="stylesheet" href="app.css?v=38">
+<link rel="stylesheet" href="app.css?v=39">
 </head>
 <body>
 
@@ -231,16 +231,27 @@
 <div class="modal-render" id="modalRender" hidden>
   <div class="mr-caja" role="dialog" aria-label="Render animado">
     <div class="mr-top"><b id="mrTitulo">Render</b><button class="mr-x" id="mrCerrar" aria-label="Cerrar">✕</button></div>
-    <video id="mrVideo" playsinline muted loop preload="none"></video>
+    <div class="mr-tabs" id="mrTabs" hidden></div>
+    <div class="mr-marco" id="mrMarco"><video id="mrVideo" playsinline muted loop preload="none"></video></div>
+    <input class="mr-linea" id="mrLinea" type="range" min="0" max="1000" value="0" step="1" aria-label="Mover el video">
+    <div class="mr-ctrl">
+      <button class="mr-b" id="mrAtras2" aria-label="Atrasar 2 segundos"><svg viewBox="0 0 24 24"><path d="M11 5L3 12l8 7zM21 5l-8 7 8 7z"/></svg><span>2 s</span></button>
+      <button class="mr-b" id="mrPaso0" aria-label="Atrasar poquito a poco"><svg viewBox="0 0 24 24"><path d="M17 5L8 12l9 7zM5 5h2v14H5z"/></svg><span>poquito</span></button>
+      <button class="mr-b mr-play" id="mrPlay" aria-label="Pausar"><svg viewBox="0 0 24 24"><path id="mrPlayD" d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></button>
+      <button class="mr-b" id="mrPaso1" aria-label="Adelantar poquito a poco"><svg viewBox="0 0 24 24"><path d="M7 5l9 7-9 7zM17 5h2v14h-2z"/></svg><span>poquito</span></button>
+      <button class="mr-b" id="mrAdel2" aria-label="Adelantar 2 segundos"><svg viewBox="0 0 24 24"><path d="M13 5l8 7-8 7zM3 5l8 7-8 7z"/></svg><span>2 s</span></button>
+    </div>
+    <div class="mr-fila"><div class="mr-marcas" id="mrMarcas"></div><button class="mr-vel" id="mrVel" aria-label="Velocidad">Normal</button></div>
     <p class="mr-nota" id="mrNota"></p>
   </div>
 </div>
 
-<script src="app.js?v=38"></script>
-<script src="cochera.js?v=38"></script>
-<script src="glamping.js?v=38"></script>
-<script src="bolso.js?v=38"></script>
-<script src="tres.js?v=38"></script>
-<script src="inicio.js?v=38"></script>
+<script src="app.js?v=39"></script>
+<script src="render.js?v=39"></script>
+<script src="cochera.js?v=39"></script>
+<script src="glamping.js?v=39"></script>
+<script src="bolso.js?v=39"></script>
+<script src="tres.js?v=39"></script>
+<script src="inicio.js?v=39"></script>
 </body>
 </html>

@@ -595,6 +595,7 @@ function glCuadro(j) {
     GL.raf = requestAnimationFrame(paso);
   } else { caja.innerHTML = cu.svg(); sigue(4200); }
 }
+const GL_EST = `<button class="gl-est" onclick="abrirRender('glamping')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21V8h18v13M3 21L9.500 3 17 8l4 13"/></svg><span><b>Estructura</b>todas las medidas de los tubos</span><i>▶</i></button>`;
 function pintarGlamping() {
   glParar();
   const g = GL.g = glCalcular();
@@ -603,7 +604,7 @@ function pintarGlamping() {
   $('#pillCarpa').textContent = 'Glamping 3 × 3,90';
   $('#glPasos').innerHTML = GL_PASOS.map(([k, t], j) => `<button data-paso="${j}" ${j === i ? 'aria-current="step"' : ''}><span>${j + 1}</span>${t}</button>`).join('');
   const esc = GL.esc = GL_ESC[id](g);
-  $('#glCuerpo').innerHTML = `<h1>${esc.titulo}</h1>${esc.arriba || ''}
+  $('#glCuerpo').innerHTML = `<h1>${esc.titulo}</h1>${i === 0 ? GL_EST : ''}${esc.arriba || ''}
     <div class="co-lamina">
       <div class="co-svg" id="glSvg"></div>
       <p class="co-frase" id="glTxt" aria-live="polite"></p>

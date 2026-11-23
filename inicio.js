@@ -61,14 +61,6 @@ function pintarProyectos() {
     </article>`).join('');
 }
 
-function verRender(clave) {
-  const r = RENDERS[clave]; if (!r) return;
-  const v = $('#mrVideo');
-  if (v.getAttribute('src') !== r.src) v.src = r.src;
-  $('#mrTitulo').textContent = r.titulo; $('#mrNota').textContent = r.nota;
-  $('#modalRender').hidden = false; v.currentTime = 0; v.play().catch(() => {});
-}
-
 const clicInicio = e => {
   const m = e.target.closest('[data-mod]'), r = e.target.closest('[data-render]'), i = e.target.closest('[data-ir]');
   if (m) {
@@ -76,7 +68,7 @@ const clicInicio = e => {
     if (id === 'cortes') ir('carpa');
     else if (id === 'catalogo') ir('proyectos');
     else { m.classList.remove('nada'); void m.offsetWidth; m.classList.add('nada'); }
-  } else if (r) verRender(r.dataset.render);
+  } else if (r) abrirRender(r.dataset.render);
   else if (i) ir(i.dataset.ir);
 };
 $('#v-inicio').addEventListener('click', clicInicio);
