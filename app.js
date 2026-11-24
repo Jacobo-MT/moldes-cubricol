@@ -371,9 +371,9 @@ const RENDERS = {
   bolso: { src: 'render/bolsito.mp4', titulo: 'Bolsito: cómo se arma', nota: 'El 4 va atrás del 1 · el 2 sobre el 1 · el 3 sobre el 2.' },
   tres: { src: 'render/tres-puntas.mp4', titulo: '3 puntas 6 × 3', nota: 'Primero la estructura sola, después con la lona. Arista 245 en todas las piezas.' },
   glamping: [
-    { tab: 'Estructura', src: 'render/glamping-estructura.mp4?v=46', titulo: 'Glamping: la estructura', nota: 'Naranja: la A · azul: el cubo · café: la escalera · morado: la ventana.',
+    { tab: 'Estructura', src: 'render/glamping-estructura.mp4?v=47', titulo: 'Glamping: la estructura', nota: 'Naranja: la A · azul: el cubo · verde: el tubo de la puerta de atrás · café: la escalera · morado: la ventana.',
       marcas: [['Adelante', 5.6], ['Tubo 319', 8.6], ['Ventana', 14.6], ['De lado', 21.3], ['Atrás', 26], ['Escalera', 33.2]] },
-    { tab: 'Con lona', src: 'render/glamping.mp4?v=46', titulo: 'Glamping con lona', nota: 'Escalera 80 + carpa 240 + cubo 70 = 390. La ventana: arriba lona, lo demás plástico.',
+    { tab: 'Con lona', src: 'render/glamping.mp4?v=47', titulo: 'Glamping con lona', nota: 'Escalera 80 + carpa 240 + cubo 70 = 390. La ventana: arriba lona, lo demás plástico.',
       marcas: [['Adelante', 4.6], ['Ventana', 11.4], ['De lado', 17.2], ['Atrás', 20.8], ['Escalera', 27.4]] },
   ],
   cochera: { src: 'render/cochera.mp4', titulo: 'Cochera 4,70 × 2,25 × 2,27', nota: 'Los 7 arcos se abren y cierran la concha; después, los 6 gajos.' },
