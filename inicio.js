@@ -11,7 +11,7 @@ const PROYECTOS = [
   { id: 'cochera', nombre: 'Cochera', sub: 'retráctil', ir: 'cochera', render: 'cochera', poster: 'render/poster-cochera.jpg',
     medidas: [['Medida', '4,70 × 2,25 × 2,27'], ['Arcos', '7 iguales'], ['Gajos', '6 de 1 molde'], ['Gajo', '638 × 123,7']], reales: [] },
   { id: 'glamping', nombre: 'Glamping', sub: 'campamento', ir: 'glamping', render: 'glamping', poster: 'render/poster-glamping.jpg',
-    medidas: [['Medida', '3 × 3,90'], ['Largo', '0,80 + 2,40 + 0,70'], ['Ventana', '70, visera de 50'], ['Techo', '2 franjas de 2 m']], reales: [] },
+    medidas: [['Medida', '3 × 3,90'], ['Largo', '0,80 + 2,40 + 0,70'], ['Ventana', '70, sale 50'], ['Techo', '2 franjas de 2 m']], reales: [] },
   { id: 'bolso', nombre: 'Bolsito', sub: 'de herramientas', ir: 'bolso', render: 'bolso', poster: 'render/poster-bolsito.jpg',
     medidas: [['Piezas', '4'], ['Armado', '4 atrás del 1'], ['', '2 sobre 1 · 3 sobre 2']], reales: [] },
 ];
