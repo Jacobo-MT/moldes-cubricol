@@ -347,3 +347,6 @@ body.en-inicio::before { content: ""; position: fixed; inset: 0; z-index: -1; ba
 .in-btn { border: 0; border-radius: 12px; background: var(--tinta); color: #fff; font-weight: 800; padding: 11px 20px; }
 .in-btn.sec { background: var(--azul-suave); color: var(--tinta); }
 .in-real { font-size: .85rem; font-weight: 600; color: var(--gris); padding: 8px 12px; border-radius: 10px; border: 2px dashed var(--linea); }
+
+.gl-leyenda .gl-sel { display: block; text-align: center; }
+.gl-leyenda .gl-sel i { vertical-align: middle; margin-right: 6px; }
