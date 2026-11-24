@@ -371,8 +371,8 @@ const RENDERS = {
   bolso: { src: 'render/bolsito.mp4', titulo: 'Bolsito: cómo se arma', nota: 'El 4 va atrás del 1 · el 2 sobre el 1 · el 3 sobre el 2.' },
   tres: { src: 'render/tres-puntas.mp4', titulo: '3 puntas 6 × 3', nota: 'Primero la estructura sola, después con la lona. Arista 245 en todas las piezas.' },
   glamping: [
-    { tab: 'Estructura', src: 'render/glamping-estructura.mp4', titulo: 'Glamping: la estructura', nota: 'Naranja: la A · gris: el marco · azul: el cubo.',
-      marcas: [['Adelante', 5.6], ['Tubo 319', 8.6], ['De lado', 16.8], ['Atrás', 22]] },
+    { tab: 'Estructura', src: 'render/glamping-estructura.mp4?v=40', titulo: 'Glamping: la estructura', nota: 'Naranja: la A · azul: el cubo · café: la escalera.',
+      marcas: [['Adelante', 5.6], ['Tubo 319', 8.6], ['De lado', 17.3], ['Atrás', 22], ['Escalera', 29.2]] },
     { tab: 'Con lona', src: 'render/glamping.mp4', titulo: 'Glamping 3 × 3,90', nota: 'Escalera 0,80 + carpa 2,50 + cubo 0,60 = 3,90 m.' },
   ],
   cochera: { src: 'render/cochera.mp4', titulo: 'Cochera 4,70 × 2,25 × 2,27', nota: 'Los 7 arcos se abren y cierran la concha; después, los 6 gajos.' },
