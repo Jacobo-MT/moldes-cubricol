@@ -114,9 +114,9 @@ function glPiezas(g) {
   const PC = GL.PCUBO, lado = [[0, 0], [C.d, 0], [C.d, C.h], [0, C.hb]];
   add({ id: 'cLado', nombre: 'Lado del cubo', grupo: 'cubo', real: lado, al: [DS, M, M, M], nota: 'el lado del tubo de 253; un solo corte' });
   add({ id: 'cPL', nombre: 'Puerta de lado (cubo)', grupo: 'frente', real: [[0, 0], [C.d, 0], [C.d, C.hb], [0, C.h]], al: [DS, M, M, M], nota: 'el lado de la ventana; cremallera en la mitad' });
-  add({ id: 'cPt', nombre: 'Puerta de atrás (cubo)', grupo: 'frente', real: rect(PC, C.hb), al: [DS, M, M, M], nota: `el fondo, del borde al tubo de ${PC}` });
-  add({ id: 'cFA', nombre: 'Fondo del cubo, abajo', grupo: 'cubo', real: rect(C.w - PC, g.cubo.zf), al: [DS, M, M, M], nota: 'del tubo de la puerta al otro lado' });
-  add({ id: 'cFB', nombre: 'Fondo del cubo, arriba', grupo: 'cubo', real: rect(C.w - PC, C.hb - g.cubo.zf), nota: 'completa el fondo' });
+  // 24-nov: el fondo son solo 2 piezas de lado a lado; la puerta de atrás se abre en la larga (por fuera, el lado de la ventana queda a la derecha)
+  add({ id: 'cFA', nombre: 'Fondo de atrás, largo', grupo: 'cubo', real: rect(C.w, g.cubo.zf), al: [DS, M, M, M], crem: C.w - PC / 2, nota: 'de lado a lado; ahí va la puerta' });
+  add({ id: 'cFB', nombre: 'Fondo de atrás, complemento', grupo: 'cubo', real: rect(C.w, C.hb - g.cubo.zf), nota: 'de lado a lado, completa arriba' });
   add({ id: 'eG', nombre: 'Esquina grande', grupo: 'cubo', real: [[g.cubo.grande.arriba, 0], [g.cubo.grande.arriba, C.h], [0, C.h]], al: [M, M, T], nota: 'el inclinado trae la franja de 4' });
   add({ id: 'eC', nombre: 'Esquina chica', grupo: 'cubo', real: [[0, 0], [g.cubo.chica.arriba, C.h], [0, C.h]], al: [T, M, M], nota: 'el inclinado trae la franja de 4' });
   add({ id: 'tri', nombre: 'Triángulo de atrás', grupo: 'cubo', real: [[0, 0], [g.cubo.tri.base, 0], [g.cubo.tri.pico, g.cubo.tri.alto]], al: [T, T, T], nota: 'los 3 lados traen la franja de 4' });
@@ -156,12 +156,16 @@ function glAcomodar(g) {
   const b = P('tB'), t = P('tapa'), ti = P('tira'), vi = P('vTe'), tr = P('tri'), Y = b.h + GAP;
   fila([[P('tA'), 0, 0, 0]]);
   // sobrante del techo: la tira de tensión entera, el techito, el triángulo y el pedazo de arriba del fondo
-  const eg = P('eG'), ec = P('eC'), te = P('tens'), la = P('cLado'), pl = P('cPL'), pa = P('cPt'), fb = P('cFB'), Y2 = Y + te.h + GAP, xF = vi.w + tr.w + 2 * GAP, xE = xF + fb.w + GAP;
-  fila([[b, 0, 0, 0], [te, 0, 0, Y], [vi, 0, 0, Y2], [tr, 0, vi.w + GAP, Y2], [fb, 0, xF, Y2], [ti, 1, xF, Y2 + fb.h + GAP], [ti, 1, xF, Y2 + fb.h + ti.w + 2 * GAP], [ti, 1, xF, Y2 + fb.h + 2 * ti.w + 3 * GAP], [ec, 1, xE, Y2]]);
+  const eg = P('eG'), ec = P('eC'), te = P('tens'), la = P('cLado'), pl = P('cPL'), fb = P('cFB'), Y2 = Y + te.h + GAP, xF = vi.w + tr.w + 2 * GAP;
+  fila([[b, 0, 0, 0], [te, 0, 0, Y], [vi, 0, 0, Y2], [tr, 0, vi.w + GAP, Y2], [fb, 0, xF, Y2], [ti, 1, xF, Y2 + fb.h + GAP], [ti, 1, xF, Y2 + fb.h + ti.w + 2 * GAP], [ti, 1, xF, Y2 + fb.h + 2 * ti.w + 3 * GAP]]);
   fila([[P('cFA'), 0, 0, 0]]);
-  fila([[la, 1, 0, 0], [pl, 1, 0, la.w + GAP]]);
-  fila([[t, 0, 0, 0], [pa, 1, 0, t.h + GAP]]);
-  fila([[eg, 1, 0, 0], [P('fAr'), 0, 0, eg.w + GAP]]);
+  fila([[la, 1, 0, 0], [pl, 1, 0, la.w + GAP], [ec, 1, 0, la.w + pl.w + 2 * GAP]]);
+  // la parte de arriba de la puerta se encaja contra la punta de la esquina grande: se arrima hasta que queden a GAP
+  const fr = P('fAr'), borde = pts => pts.flatMap((a, i) => { const b = pts[(i + 1) % pts.length], k = Math.ceil(glLen(a, b)); return Array.from({ length: k }, (_, j) => [a[0] + (b[0] - a[0]) * j / k, a[1] + (b[1] - a[1]) * j / k]); });
+  const be = borde(eg.corte.map(([x, y]) => [eg.h - (y - eg.y0), t.h + GAP + eg.w - (x - eg.x0)])), bf = borde(fr.corte.map(([x, y]) => [x - fr.x0, R - (y - fr.y0)]));
+  let xf = eg.h + GAP;
+  while (xf > 0 && bf.every(p => be.every(q => Math.hypot(p[0] + xf - 1 - q[0], p[1] - q[1]) >= GAP))) xf--;
+  fila([[t, 0, 0, 0], [eg, 1, 0, t.h + GAP], [fr, 0, xf, R - fr.h]]);
   fila([[P('fAb'), 0, 0, 0]]);
   const ca = P('vCara'), co = P('vCos');
   // la cara y los 2 costados van en plástico: salen aparte, con los triángulos encajados uno al revés del otro
@@ -194,9 +198,7 @@ function glModelo(g, o = {}) {
   // cubo: 2 lados y el fondo en 2
   const y1 = F + C.d, zf = g.cubo.zf;
   [[0, 'cPL'], [C.w, 'cLado']].forEach(([x, id]) => caras.push({ pts: [L3(x, F, 0), L3(x, y1, 0), L3(x, y1, C.hb), L3(x, F, C.h)], col: GL_COL.lona2, nombre: 'cubo', pz: n(id) }));
-  const PC = GL.PCUBO;
-  caras.push({ pts: [L3(0, y1, 0), L3(PC, y1, 0), L3(PC, y1, C.hb), L3(0, y1, C.hb)], col: GL_COL.lona, nombre: 'cubo', pz: n('cPt') });
-  [[0, zf, 'cFA'], [zf, C.hb, 'cFB']].forEach(([a, b, id]) => caras.push({ pts: [L3(PC, y1, a), L3(C.w, y1, a), L3(C.w, y1, b), L3(PC, y1, b)], col: GL_COL.lona, nombre: 'cubo', pz: n(id) }));
+  [[0, zf, 'cFA'], [zf, C.hb, 'cFB']].forEach(([a, b, id]) => caras.push({ pts: [L3(0, y1, a), L3(C.w, y1, a), L3(C.w, y1, b), L3(0, y1, b)], col: GL_COL.lona, nombre: 'cubo', pz: n(id) }));
   caras.push({ pts: [L3(0, F, C.h), L3(300, F, C.h), L3(300, y1, C.hb), L3(0, y1, C.hb)], col: '#f7f8fc', nombre: 'cubo', pz: n('tapa') });
   // ventana: techito, cara que baja derecha hasta el techo y 2 costados
   const W2 = g.vent, { vx, vz, xf, zb } = W2, ya = W2.y0, yb = W2.y1;
@@ -246,7 +248,7 @@ function gl3D(g, a, o = {}) {
   return s + '</svg>';
 }
 // desde dónde se ve mejor cada pieza
-const GL_VISTA = { cPL: 1.9, cPt: 3.3, tA: 0.55, tB: -0.6, fAb: 0.25, fAr: 0.25, eG: 2.6, eC: 3.6, tri: 3.1, tapa: 2.6, vCara: -1.1, vCos: -0.8, vTe: -1.1, tira: 0.2 };
+const GL_VISTA = { cPL: 1.9, tA: 0.55, tB: -0.6, fAb: 0.25, fAr: 0.25, eG: 2.6, eC: 3.6, tri: 3.1, tapa: 2.6, vCara: -1.1, vCos: -0.8, vTe: -1.1, tira: 0.2 };
 const glVista = p => GL_VISTA[p.id] !== undefined ? GL_VISTA[p.id] : 2.75;
 
 // ---------- dibujos planos ----------
@@ -311,16 +313,30 @@ function glAbre(X, Y, s0, s1, h, u) {
   });
   return s + (u < .2 ? `<line x1="${X(c)}" y1="${Y(0)}" x2="${X(c)}" y2="${Y(h)}" stroke="#14181b" stroke-width="3"/>` : '');
 }
-// Las 2 puertas del cubo, de frente: 70 de ancho, cremallera en la mitad
+// El fondo del cubo visto desde atrás, por fuera: 2 piezas de lado a lado y la puerta dentro de la larga
+function glFondo(g, o = {}) {
+  const C = GL.CUBO, PC = GL.PCUBO, zf = g.cubo.zf, AL = C.hb, h = GL.CREM_ALTO, k = 1.6, W = 640, H = 530, X = x => 95 + x * k, Y = z => 430 - z * k, fa = glP(g, 'cFA'), fb = glP(g, 'cFB'), c = C.w - PC / 2, t = C.w - PC;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="El fondo del cubo visto desde atrás">${FL}<rect x="0" y="${Y(0)}" width="${W}" height="${H - Y(0)}" fill="#e8dcc4"/>` + glT(W / 2, 22, 'visto desde atrás, por fuera', { fs: 20 });
+  const caja = (p, a, b) => `<rect x="${X(0)}" y="${Y(b)}" width="${C.w * k}" height="${(b - a) * k}" fill="${o.lona ? GL_COL.lona : p.col}" stroke="#14181b" stroke-width="2.5"/>` + (o.lona ? '' : glBola(X(90), Y((a + b) / 2), p, b - a < 50 ? 20 : 30));
+  const A = o.lona ? (d, x) => x : glAp;
+  s += A(.1, caja(fa, 0, zf)) + A(.7, caja(fb, zf, AL));
+  if (o.sella) s += glAp(1.3, `<line x1="${X(0)}" y1="${Y(zf)}" x2="${X(C.w)}" y2="${Y(zf)}" stroke="${GL_COL.rojo}" stroke-width="5" stroke-dasharray="12 7"/>` + flecha(X(0) - 18, Y(0), X(0) - 18, Y(zf)) + glT(X(0) - 26, Y(zf / 2), n1(zf), { fs: 22, ta: 'end' }) + flecha(X(0) - 18, Y(zf), X(0) - 18, Y(AL)) + glT(X(0) - 26, Y((zf + AL) / 2) + 8, n1(AL - zf), { fs: 22, ta: 'end' }) + flecha(X(0), Y(0) + 30, X(C.w), Y(0) + 30) + glT(X(150), Y(0) + 60, C.w, { fs: 26 }));
+  if (o.puerta !== undefined) {
+    s += `<line x1="${X(t)}" y1="${Y(0)}" x2="${X(t)}" y2="${Y(AL)}" stroke="#2f9e44" stroke-width="6" stroke-dasharray="14 8"/>` + (o.lona ? glAbre(X, Y, t, C.w, h, o.puerta) : `<line x1="${X(c)}" y1="${Y(0)}" x2="${X(c)}" y2="${Y(h)}" stroke="#14181b" stroke-width="5"/>`);
+    s += flecha(X(t), Y(0) + 24, X(c), Y(0) + 24, GL_COL.rojo, 2) + flecha(X(c), Y(0) + 24, X(C.w), Y(0) + 24, GL_COL.rojo, 2) + glT(X((t + c) / 2), Y(0) + 52, PC / 2, { fs: 22, col: GL_COL.rojo }) + glT(X((c + C.w) / 2), Y(0) + 52, PC / 2, { fs: 22, col: GL_COL.rojo });
+    s += flecha(X(t) - 22, Y(0), X(t) - 22, Y(h), GL_COL.rojo, 2) + glT(X(t) - 30, Y(60), h, { fs: 24, col: GL_COL.rojo, ta: 'end' }) + glT(X(t) - 12, Y(AL) + 34, 'tubo nuevo', { fs: 20, col: '#2f9e44', ta: 'end' }) + glT(X(c), Y(0) + 84, 'lado de la ventana', { fs: 18 });
+  }
+  return s + '</svg>';
+}
+// La puerta del lado del cubo, de frente: 70 de ancho, cremallera en la mitad
 function glPuertaCubo(u, o = {}) {
   const W = 640, H = 560, P = GL.PCUBO, AL = GL.CUBO.hb, k = 1.75, X = x => W / 2 + (x - P / 2) * k, Y = z => 470 - z * k, h = GL.CREM_ALTO;
   let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Puerta del cubo">${FL}<rect x="0" y="${Y(0)}" width="${W}" height="${H - Y(0)}" fill="#e8dcc4"/>`;
   s += `<rect x="${X(-40)}" y="${Y(AL)}" width="${40 * k}" height="${AL * k}" fill="${GL_COL.lona2}"/><rect x="${X(P)}" y="${Y(AL)}" width="${60 * k}" height="${AL * k}" fill="${GL_COL.lona2}"/>`;
   s += `<rect x="${X(0)}" y="${Y(AL)}" width="${P * k}" height="${AL * k}" fill="${GL_COL.lona}" stroke="${GL_COL.borde}" stroke-width="2.5"/>`;
-  s += `<line x1="${X(P)}" y1="${Y(0)}" x2="${X(P)}" y2="${Y(AL)}" stroke="${o.tubo ? '#2f9e44' : '#2c5aa0'}" stroke-width="${o.tubo ? 9 : 6}"/><line x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(AL)}" stroke="#2c5aa0" stroke-width="6"/>`;
+  s += `<line x1="${X(P)}" y1="${Y(0)}" x2="${X(P)}" y2="${Y(AL)}" stroke="#2c5aa0" stroke-width="6"/><line x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(AL)}" stroke="#2c5aa0" stroke-width="6"/>`;
   s += glAbre(X, Y, 0, P, h, u);
   s += flecha(X(0), Y(0) + 24, X(P), Y(0) + 24) + glT(X(P / 2), Y(0) + 54, P, { fs: 26 }) + flecha(X(P) + 22, Y(0), X(P) + 22, Y(h), GL_COL.rojo) + glT(X(P) + 32, Y(h / 2), h, { fs: 26, col: GL_COL.rojo, ta: 'start' });
-  if (o.tubo) s += (glT(X(P) + 32, Y(AL) + 30, 'tubo nuevo', { fs: 22, col: '#2f9e44', ta: 'start' }));
   return s + glT(W / 2, 40, o.titulo || '', { fs: 26 }) + '</svg>';
 }
 // La ventana en la estructura: de frente al lado largo y de canto (con la bajada)
@@ -483,6 +499,8 @@ function glFicha(g, p, o = {}) {
   // la pieza: lo de afuera es el corte; la raya roja es donde se sella
   r += glAp(.1, `<polygon points="${pts(p.corte)}" fill="${p.col}" stroke="#14181b" stroke-width="3" stroke-linejoin="round"/>`);
   if (p.al.some(a => a > 0)) r += glAp(.5, `<polygon points="${pts(p.real)}" fill="none" stroke="${GL_COL.rojo}" stroke-width="2" stroke-dasharray="9 6"/>`);
+  // la cremallera que va en esta pieza (se abre después de sellar)
+  if (p.crem) r += glAp(1.2, `<line x1="${X(p.crem)}" y1="${Y(0)}" x2="${X(p.crem)}" y2="${Y(GL.CREM_ALTO)}" stroke="#14181b" stroke-width="4" stroke-dasharray="10 5"/>` + glT(X(p.crem) - 10, Y(GL.CREM_ALTO * .55), `cremallera ${GL.CREM_ALTO}`, { fs: 20, extra: `transform="rotate(-90 ${(X(p.crem) - 10).toFixed(1)} ${Y(GL.CREM_ALTO * .55).toFixed(1)})"` }) + flecha(X(p.crem), Y(32), X(p.x0 + p.w), Y(32), GL_COL.rojo, 2) + glT((X(p.crem) + X(p.x0 + p.w)) / 2, Y(32) - 8, n1(p.x0 + p.w - p.crem), { fs: 20, col: GL_COL.rojo }));
   // medida de cada borde (la del corte), por fuera
   const c = p.corte, n = c.length, cx = c.reduce((a, q) => a + q[0], 0) / n, cy = c.reduce((a, q) => a + q[1], 0) / n;
   const dentro = p.w * s > 110 && p.h * s > 40;      // si no caben por dentro, van al lado de cada medida
@@ -697,9 +715,10 @@ const GL_ESC = {
       { t: `Atrás va un cubo de <b>300</b> de ancho y <b>70</b> de fondo; baja de <b>250</b> a <b>235,5</b>.`, svg: () => gl3D(g, 2.7, { resalta: 'cubo' }) },
       { t: `Cada lado es <b>un solo corte</b>. El del tubo de 253 es ${glN(la)}; el del lado de la ventana es una <b>puerta</b> ${glN(glP(g, 'cPL'))}.`, svg: () => gl3D(g, 2.4, { piezas: [la.n, glP(g, 'cPL').n] }) },
       glFichaCu(g, 'cLado'),
-      { t: `En el fondo, a <b>${GL.PCUBO}</b> del borde del lado de la ventana, va un <b>tubo nuevo</b>: de ahí al borde es la <b>puerta de atrás</b> ${glN(glP(g, 'cPt'))}.`, svg: () => gl3D(g, 3.3, { piezas: [glP(g, 'cPt').n] }) },
-      { t: `El resto del fondo mide <b>235,5</b> de alto y el rollo <b>${n0(GL.ROLLO)}</b>: va en 2, ${glN(fa)} abajo y ${glN(fb)} arriba. La de arriba se sella <b>por encima</b>, para que el agua resbale.`, svg: () => gl3D(g, 2.9, { piezas: [fa.n, fb.n] }) },
+      { t: `El fondo son solo <b>2 piezas de lado a lado</b>: ${glN(fa)} la larga, con todo el ancho del rollo (<b>${n0(GL.ROLLO)}</b>), y ${glN(fb)} el complemento, porque mide <b>235,5</b> de alto.`, svg: () => gl3D(g, 2.9, { piezas: [fa.n, fb.n] }) },
+      { t: `${glN(fb)} se sella a ${glN(fa)} <b>por encima</b>, para que el agua resbale.`, svg: () => glFondo(g, { sella: 1 }) },
       glFichaCu(g, 'cFA'), glFichaCu(g, 'cFB'),
+      { t: `La <b>puerta de atrás</b> no es otra pieza: se abre en ${glN(fa)}, del borde de la ventana al <b>tubo nuevo</b> (verde), que va a <b>${GL.PCUBO}</b>.`, svg: () => glFondo(g, { puerta: 0 }) },
       glFichaCu(g, 'tapa'),
       { t: `Visto desde atrás, el cubo es más ancho que la carpa: cierra <b>2 esquinas</b> (rojo).`, svg: () => glEsquinas(g) },
       glFichaCu(g, 'eG'), glFichaCu(g, 'eC'), glFichaCu(g, 'tri'),
@@ -707,7 +726,7 @@ const GL_ESC = {
     ] };
   },
   puerta: g => {
-    const ab = glP(g, 'fAb'), ar = glP(g, 'fAr'), pl = glP(g, 'cPL'), pa = glP(g, 'cPt'), ti = glP(g, 'tira'), h = GL.CREM_ALTO;
+    const ab = glP(g, 'fAb'), ar = glP(g, 'fAr'), pl = glP(g, 'cPL'), pa = glP(g, 'cFA'), ti = glP(g, 'tira'), h = GL.CREM_ALTO;
     return { titulo: 'Puertas (van al final)', cuadros: [
       { t: `Son <b>3 puertas</b>: la de adelante, una en el <b>lado del cubo</b> (el de la ventana) y otra <b>atrás</b>. Todas con <b>1 cremallera</b> en la mitad, de <b>${h}</b>.`, svg: () => gl3D(g, -.45, { partes: 1 }) },
       { t: `Adelante: es más alta que el rollo, va en <b>2 piezas</b>, ${glN(ab)} y ${glN(ar)}.`, svg: () => glCara(g, { partes: 1 }) },
@@ -719,8 +738,8 @@ const GL_ESC = {
       { t: `Para abrir: cada mitad <b>se enrolla hacia su lado</b> y queda <b>todo el triángulo abierto</b>; se amarra con <b>2 correas</b>.`, anim: { dur: 4000, f: u => glCara(g, { abre: u }) } },
       glFichaCu(g, 'cPL'),
       { t: `Puerta de lado ${glN(pl)}: <b>${GL.PCUBO}</b> de ancho, cremallera en la mitad, de <b>${h}</b>. Se abre igual.`, anim: { dur: 4000, f: u => glPuertaCubo(u, { titulo: 'Lado del cubo (el de la ventana)' }) } },
-      glFichaCu(g, 'cPt'),
-      { t: `Puerta de atrás ${glN(pa)}: del borde al <b>tubo nuevo</b> (verde), <b>${GL.PCUBO}</b>. Igual: cremallera en la mitad y se enrolla.`, anim: { dur: 4000, f: u => glPuertaCubo(u, { titulo: 'Atrás (fondo del cubo)', tubo: true }) } },
+      { t: `Puerta de atrás, en el fondo entero ${glN(pa)}: sella la cremallera a <b>${n1(GL.PCUBO / 2 + GL.SELLE / 2)}</b> del borde de corte (<b>${GL.PCUBO / 2}</b> ya sellada) y corta.`, svg: () => glFondo(g, { puerta: 0 }) },
+      { t: `Se abre igual: cada mitad se enrolla, una hacia el borde y la otra hacia el <b>tubo nuevo</b> (verde).`, anim: { dur: 4000, f: u => glFondo(g, { puerta: u, lona: 1 }) } },
     ] };
   },
   unir: g => {
@@ -811,7 +830,7 @@ Medidas de CORTE, ya con selle y dobladillo:
   });
   t += `
 
-*Puertas (3):* adelante, lado del cubo (el de la ventana) y atrás (del borde al tubo nuevo de ${GL.PCUBO}); cada una con 1 cremallera recta en la mitad de ${GL.CREM_ALTO} y 2 correas; se enrolla hacia los lados`;
+*Puertas (3):* adelante, lado del cubo (el de la ventana) y atrás (en la pieza ${glP(g, 'cFA').n}, cremallera a ${n1(GL.PCUBO / 2 + GL.SELLE / 2)} del borde de corte del lado de la ventana; tubo nuevo a ${GL.PCUBO}); cada una con 1 cremallera recta en la mitad de ${GL.CREM_ALTO} y 2 correas; se enrolla hacia los lados`;
   t += `
 *Ventana:* hueco de ${GL.VENT.ancho} × ${n1(g.vent.hueco)}, empieza a ${n1(g.vent.desde)} del piso por el tubo de 319; los 2 tubos del techito salen a ${n0(GL.VENT.en)} (${n0(g.vent.vz)} de alto)
 *Lona:* ≈ ${n0(Math.ceil(g.total / 100))} m de rollo de ${n0(GL.ROLLO)} de ancho

@@ -1,5 +1,5 @@
 // Primero la red (para que siempre llegue la versión nueva); si no hay señal, lo guardado.
-const CACHE = 'moldes-v47';
+const CACHE = 'moldes-v48';
 const BASE = ['./', 'index.html', 'app.css', 'app.js', 'render.js', 'cochera.js', 'glamping.js', 'bolso.js', 'tres.js', 'inicio.js', 'fondo/carpa-blanca.jpg', 'icons/logo-oscuro.png', 'manifest.webmanifest', 'icons/logo-claro.png', 'icons/icon-192.png'];
 
 self.addEventListener('install', e => {
